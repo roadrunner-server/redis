@@ -2,6 +2,7 @@ package kv
 
 import (
 	"context"
+	stderr "errors"
 	"strings"
 	"time"
 
@@ -13,20 +14,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type driver struct {
+type Driver struct {
 	universalClient redis.UniversalClient
 	log             *zap.Logger
 	cfg             *Config
 }
 
-func NewRedisDriver(log *zap.Logger, key string, cfgPlugin config.Configurer) (*driver, error) {
+func NewRedisDriver(log *zap.Logger, key string, cfgPlugin config.Configurer) (*Driver, error) {
 	const op = errors.Op("new_redis_driver")
 
-	d := &driver{
+	d := &Driver{
 		log: log,
 	}
 
-	// will be different for every connected driver
+	// will be different for every connected Driver
 	err := cfgPlugin.UnmarshalKey(key, &d.cfg)
 	if err != nil {
 		return nil, errors.E(op, err)
@@ -66,7 +67,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin config.Configurer) (*
 }
 
 // Has checks if value exists.
-func (d *driver) Has(keys ...string) (map[string]bool, error) {
+func (d *Driver) Has(keys ...string) (map[string]bool, error) {
 	const op = errors.Op("redis_driver_has")
 	if keys == nil {
 		return nil, errors.E(op, errors.NoKeys)
@@ -91,7 +92,7 @@ func (d *driver) Has(keys ...string) (map[string]bool, error) {
 }
 
 // Get loads key content into slice.
-func (d *driver) Get(key string) ([]byte, error) {
+func (d *Driver) Get(key string) ([]byte, error) {
 	const op = errors.Op("redis_driver_get")
 	// to get cases like "  "
 	keyTrimmed := strings.TrimSpace(key)
@@ -104,7 +105,7 @@ func (d *driver) Get(key string) ([]byte, error) {
 // MGet loads content of multiple values (some values might be skipped).
 // https://redis.io/commands/mget
 // Returns slice with the interfaces with values
-func (d *driver) MGet(keys ...string) (map[string][]byte, error) {
+func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 	const op = errors.Op("redis_driver_mget")
 	if keys == nil {
 		return nil, errors.E(op, errors.NoKeys)
@@ -123,7 +124,7 @@ func (d *driver) MGet(keys ...string) (map[string][]byte, error) {
 	for _, k := range keys {
 		cmd := d.universalClient.Get(context.Background(), k)
 		if cmd.Err() != nil {
-			if cmd.Err() == redis.Nil {
+			if stderr.Is(cmd.Err(), redis.Nil) {
 				continue
 			}
 			return nil, errors.E(op, cmd.Err())
@@ -141,7 +142,7 @@ func (d *driver) MGet(keys ...string) (map[string][]byte, error) {
 //
 // Use expiration for `SETEX`-like behavior.
 // Zero expiration means the key has no expiration time.
-func (d *driver) Set(items ...*kvv1.Item) error {
+func (d *Driver) Set(items ...*kvv1.Item) error {
 	const op = errors.Op("redis_driver_set")
 	if items == nil {
 		return errors.E(op, errors.NoKeys)
@@ -172,7 +173,7 @@ func (d *driver) Set(items ...*kvv1.Item) error {
 }
 
 // Delete one or multiple keys.
-func (d *driver) Delete(keys ...string) error {
+func (d *Driver) Delete(keys ...string) error {
 	const op = errors.Op("redis_driver_delete")
 	if keys == nil {
 		return errors.E(op, errors.NoKeys)
@@ -190,7 +191,7 @@ func (d *driver) Delete(keys ...string) error {
 
 // MExpire https://redis.io/commands/expire
 // timeout in RFC3339
-func (d *driver) MExpire(items ...*kvv1.Item) error {
+func (d *Driver) MExpire(items ...*kvv1.Item) error {
 	const op = errors.Op("redis_driver_mexpire")
 	now := time.Now()
 	for _, item := range items {
@@ -216,7 +217,7 @@ func (d *driver) MExpire(items ...*kvv1.Item) error {
 
 // TTL https://redis.io/commands/ttl
 // return time in seconds (float64) for a given keys
-func (d *driver) TTL(keys ...string) (map[string]string, error) {
+func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 	const op = errors.Op("redis_driver_ttl")
 	if keys == nil {
 		return nil, errors.E(op, errors.NoKeys)
@@ -243,7 +244,7 @@ func (d *driver) TTL(keys ...string) (map[string]string, error) {
 	return m, nil
 }
 
-func (d *driver) Clear() error {
+func (d *Driver) Clear() error {
 	fdb := d.universalClient.FlushDB(context.Background())
 	if fdb.Err() != nil {
 		return fdb.Err()
@@ -252,7 +253,7 @@ func (d *driver) Clear() error {
 	return nil
 }
 
-func (d *driver) Stop() {
+func (d *Driver) Stop() {
 	// close the connection
 	_ = d.universalClient.Close()
 }
