@@ -239,7 +239,13 @@ func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 			return nil, err
 		}
 
-		m[key] = duration.String()
+		// The command returns -2 if the key does not exist.
+		// The command returns -1 if the key exists but has no associated expire.
+		if duration == -1 || duration == -2 {
+			continue
+		}
+
+		m[key] = time.Now().Add(duration).Format(time.RFC3339)
 	}
 	return m, nil
 }
