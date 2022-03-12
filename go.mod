@@ -4,9 +4,9 @@ go 1.17
 
 require (
 	github.com/go-redis/redis/v8 v8.11.4
-	github.com/roadrunner-server/api/v2 v2.11.0
+	github.com/roadrunner-server/api/v2 v2.12.0
 	github.com/roadrunner-server/errors v1.1.1
-	github.com/roadrunner-server/sdk/v2 v2.10.1
+	github.com/roadrunner-server/sdk/v2 v2.11.0
 	go.uber.org/zap v1.21.0
 )
 
@@ -17,7 +17,6 @@ require (
 	github.com/roadrunner-server/tcplisten v1.1.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/net v0.0.0-20220111093109-d55c255bac03 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )

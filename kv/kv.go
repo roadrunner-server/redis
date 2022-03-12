@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/roadrunner-server/api/v2/plugins/config"
-	kvv1 "github.com/roadrunner-server/api/v2/proto/kv/v1beta"
+	kvv1 "github.com/roadrunner-server/api/v2/proto/kv/v1"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/sdk/v2/utils"
 	"go.uber.org/zap"
