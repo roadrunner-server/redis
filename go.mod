@@ -3,7 +3,7 @@ module github.com/roadrunner-server/redis/v2
 go 1.18
 
 require (
-	github.com/go-redis/redis/v8 v8.11.4
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/roadrunner-server/api/v2 v2.13.0
 	github.com/roadrunner-server/errors v1.1.2
 	github.com/roadrunner-server/sdk/v2 v2.11.1
