@@ -7,12 +7,18 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/roadrunner-server/api/v2/plugins/config"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/sdk/v2/utils"
+	"github.com/roadrunner-server/sdk/v3/utils"
 	kvv1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/proto/kv/v1"
 	"go.uber.org/zap"
 )
+
+type Configurer interface {
+	// UnmarshalKey takes a single key and unmarshal it into a Struct.
+	UnmarshalKey(name string, out any) error
+	// Has checks if config section exists.
+	Has(name string) bool
+}
 
 type Driver struct {
 	universalClient redis.UniversalClient
@@ -20,7 +26,7 @@ type Driver struct {
 	cfg             *Config
 }
 
-func NewRedisDriver(log *zap.Logger, key string, cfgPlugin config.Configurer) (*Driver, error) {
+func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer) (*Driver, error) {
 	const op = errors.Op("new_redis_driver")
 
 	d := &Driver{

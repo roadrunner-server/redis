@@ -5,11 +5,17 @@ import (
 	"sync"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/roadrunner-server/api/v2/plugins/config"
-	"github.com/roadrunner-server/api/v2/plugins/pubsub"
 	"github.com/roadrunner-server/errors"
+	"github.com/roadrunner-server/sdk/v3/plugins/pubsub"
 	"go.uber.org/zap"
 )
+
+type Configurer interface {
+	// UnmarshalKey takes a single key and unmarshal it into a Struct.
+	UnmarshalKey(name string, out any) error
+	// Has checks if config section exists.
+	Has(name string) bool
+}
 
 type Driver struct {
 	sync.RWMutex
@@ -21,7 +27,7 @@ type Driver struct {
 	stopCh          chan struct{}
 }
 
-func NewPubSubDriver(log *zap.Logger, key string, cfgPlugin config.Configurer) (*Driver, error) {
+func NewPubSubDriver(log *zap.Logger, key string, cfgPlugin Configurer) (*Driver, error) {
 	const op = errors.Op("new_pub_sub_driver")
 	ps := &Driver{
 		log: log,
@@ -83,11 +89,11 @@ func (p *Driver) stop() {
 	}()
 }
 
-func (p *Driver) Publish(msg *pubsub.Message) error {
+func (p *Driver) Publish(msg pubsub.Message) error {
 	p.Lock()
 	defer p.Unlock()
 
-	f := p.universalClient.Publish(context.Background(), msg.Topic, msg.Payload)
+	f := p.universalClient.Publish(context.Background(), msg.Topic(), msg.Payload())
 	if f.Err() != nil {
 		return f.Err()
 	}
@@ -95,12 +101,12 @@ func (p *Driver) Publish(msg *pubsub.Message) error {
 	return nil
 }
 
-func (p *Driver) PublishAsync(msg *pubsub.Message) {
+func (p *Driver) PublishAsync(msg pubsub.Message) {
 	go func() {
 		p.Lock()
 		defer p.Unlock()
 
-		f := p.universalClient.Publish(context.Background(), msg.Topic, msg.Payload)
+		f := p.universalClient.Publish(context.Background(), msg.Topic(), msg.Payload())
 		if f.Err() != nil {
 			p.log.Error("redis publish", zap.Error(f.Err()))
 		}
@@ -180,7 +186,7 @@ func (p *Driver) Stop() {
 }
 
 // Next message
-func (p *Driver) Next(ctx context.Context) (*pubsub.Message, error) {
+func (p *Driver) Next(ctx context.Context) (pubsub.Message, error) {
 	const op = errors.Op("redis_driver_next")
 	select {
 	case msg, ok := <-p.channel.message():

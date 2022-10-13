@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/roadrunner-server/api/v2/plugins/pubsub"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/sdk/v2/utils"
+	"github.com/roadrunner-server/sdk/v3/plugins/pubsub"
+	"github.com/roadrunner-server/sdk/v3/utils"
 	"go.uber.org/zap"
 )
 
@@ -21,13 +21,13 @@ type redisChannel struct {
 	log *zap.Logger
 
 	// out channel with all subs
-	out chan *pubsub.Message
+	out chan pubsub.Message
 
 	exit chan struct{}
 }
 
 func newRedisChannel(redisClient redis.UniversalClient, log *zap.Logger) *redisChannel {
-	out := make(chan *pubsub.Message, 100)
+	out := make(chan pubsub.Message, 100)
 	fi := &redisChannel{
 		out:    out,
 		client: redisClient,
@@ -65,9 +65,9 @@ func (r *redisChannel) read() {
 				return
 			}
 
-			r.out <- &pubsub.Message{
-				Topic:   msg.Channel,
-				Payload: utils.AsBytes(msg.Payload),
+			r.out <- &pubsub.Msg{
+				Topic_:   msg.Channel,
+				Payload_: utils.AsBytes(msg.Payload),
 			}
 
 		case <-r.exit:
@@ -91,6 +91,6 @@ func (r *redisChannel) stop() {
 	close(r.exit)
 }
 
-func (r *redisChannel) message() chan *pubsub.Message {
+func (r *redisChannel) message() chan pubsub.Message {
 	return r.out
 }
