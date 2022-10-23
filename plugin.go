@@ -5,9 +5,7 @@ import (
 
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v3/kv"
-	rpubsub "github.com/roadrunner-server/redis/v3/pubsub"
 	"github.com/roadrunner-server/sdk/v3/plugins/kv"
-	"github.com/roadrunner-server/sdk/v3/plugins/pubsub"
 	"go.uber.org/zap"
 )
 
@@ -49,13 +47,4 @@ func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
 	}
 
 	return st, nil
-}
-
-func (p *Plugin) PubSubFromConfig(key string) (pubsub.PubSub, error) {
-	const op = errors.Op("pub_sub_from_config")
-	ps, err := rpubsub.NewPubSubDriver(p.log, key, p.cfgPlugin)
-	if err != nil {
-		return nil, errors.E(op, err)
-	}
-	return ps, nil
 }
