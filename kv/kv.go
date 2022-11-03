@@ -9,7 +9,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/sdk/v3/utils"
-	kvv1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/proto/kv/v1"
+	kvv1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/kv/v1"
 	"go.uber.org/zap"
 )
 
