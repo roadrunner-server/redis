@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v3 v3.0.0-beta.5
+	github.com/roadrunner-server/sdk/v3 v3.0.0-rc.2
 	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.27
 	go.uber.org/zap v1.23.0
 )
