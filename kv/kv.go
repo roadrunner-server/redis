@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/roadrunner-server/api/v3/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/sdk/v3/utils"
-	kvv1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/kv/v1"
 	"go.uber.org/zap"
 )
 
@@ -148,7 +148,7 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 //
 // Use expiration for `SETEX`-like behavior.
 // Zero expiration means the key has no expiration time.
-func (d *Driver) Set(items ...*kvv1.Item) error {
+func (d *Driver) Set(items ...kv.Item) error {
 	const op = errors.Op("redis_driver_set")
 	if items == nil {
 		return errors.E(op, errors.NoKeys)
@@ -159,17 +159,17 @@ func (d *Driver) Set(items ...*kvv1.Item) error {
 			return errors.E(op, errors.EmptyKey)
 		}
 
-		if item.Timeout == "" {
-			err := d.universalClient.Set(context.Background(), item.Key, item.Value, 0).Err()
+		if item.Timeout() == "" {
+			err := d.universalClient.Set(context.Background(), item.Key(), item.Value(), 0).Err()
 			if err != nil {
 				return err
 			}
 		} else {
-			t, err := time.Parse(time.RFC3339, item.Timeout)
+			t, err := time.Parse(time.RFC3339, item.Timeout())
 			if err != nil {
 				return err
 			}
-			err = d.universalClient.Set(context.Background(), item.Key, item.Value, t.Sub(now)).Err()
+			err = d.universalClient.Set(context.Background(), item.Key(), item.Value(), t.Sub(now)).Err()
 			if err != nil {
 				return err
 			}
@@ -197,25 +197,25 @@ func (d *Driver) Delete(keys ...string) error {
 
 // MExpire https://redis.io/commands/expire
 // timeout in RFC3339
-func (d *Driver) MExpire(items ...*kvv1.Item) error {
+func (d *Driver) MExpire(items ...kv.Item) error {
 	const op = errors.Op("redis_driver_mexpire")
 	now := time.Now()
 	for _, item := range items {
 		if item == nil {
 			continue
 		}
-		if item.Timeout == "" || strings.TrimSpace(item.Key) == "" {
+		if item.Timeout() == "" || strings.TrimSpace(item.Key()) == "" {
 			return errors.E(op, errors.Str("should set timeout and at least one key"))
 		}
 
-		t, err := time.Parse(time.RFC3339, item.Timeout)
+		t, err := time.Parse(time.RFC3339, item.Timeout())
 		if err != nil {
 			return err
 		}
 
 		// t guessed to be in future
 		// for Redis we use t.Sub, it will result in seconds, like 4.2s
-		d.universalClient.Expire(context.Background(), item.Key, t.Sub(now))
+		d.universalClient.Expire(context.Background(), item.Key(), t.Sub(now))
 	}
 
 	return nil

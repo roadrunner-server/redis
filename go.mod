@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/roadrunner-server/api/v3 v3.1.2
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v3 v3.0.1
-	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.27
+	github.com/roadrunner-server/sdk/v3 v3.1.0
 	go.uber.org/zap v1.24.0
 )
 
@@ -17,5 +17,4 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 )

@@ -3,9 +3,9 @@ package redis
 import (
 	"sync"
 
+	"github.com/roadrunner-server/api/v3/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v3/kv"
-	"github.com/roadrunner-server/sdk/v3/plugins/kv"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +18,10 @@ type Configurer interface {
 	Has(name string) bool
 }
 
+type Logger interface {
+	NamedLogger(name string) *zap.Logger
+}
+
 type Plugin struct {
 	sync.RWMutex
 	// config for RR integration
@@ -26,9 +30,8 @@ type Plugin struct {
 	log *zap.Logger
 }
 
-func (p *Plugin) Init(cfg Configurer, log *zap.Logger) error {
-	p.log = new(zap.Logger)
-	*p.log = *log
+func (p *Plugin) Init(cfg Configurer, log Logger) error {
+	p.log = log.NamedLogger(PluginName)
 	p.cfgPlugin = cfg
 
 	return nil
