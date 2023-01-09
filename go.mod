@@ -1,4 +1,4 @@
-module github.com/roadrunner-server/redis/v3
+module github.com/roadrunner-server/redis/v4
 
 go 1.19
 
@@ -6,7 +6,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/roadrunner-server/api/v3 v3.1.2
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v3 v3.1.0
+	github.com/roadrunner-server/sdk/v4 v4.0.0
 	go.uber.org/zap v1.24.0
 )
 

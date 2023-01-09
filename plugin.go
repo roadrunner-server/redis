@@ -5,7 +5,7 @@ import (
 
 	"github.com/roadrunner-server/api/v3/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
-	rkv "github.com/roadrunner-server/redis/v3/kv"
+	rkv "github.com/roadrunner-server/redis/v4/kv"
 	"go.uber.org/zap"
 )
 
