@@ -3,7 +3,7 @@ package redis
 import (
 	"sync"
 
-	"github.com/roadrunner-server/api/v3/plugins/v1/kv"
+	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v4/kv"
 	"go.uber.org/zap"
