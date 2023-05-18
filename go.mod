@@ -6,7 +6,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/roadrunner-server/api/v4 v4.3.2
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v4 v4.2.3
+	github.com/roadrunner-server/sdk/v4 v4.2.4
 	go.uber.org/zap v1.24.0
 )
 
