@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/sdk/v4/utils"
@@ -46,27 +46,26 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer) (*Driver,
 	d.cfg.InitDefaults()
 
 	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
-		Addrs:              d.cfg.Addrs,
-		DB:                 d.cfg.DB,
-		Username:           d.cfg.Username,
-		Password:           d.cfg.Password,
-		SentinelPassword:   d.cfg.SentinelPassword,
-		MaxRetries:         d.cfg.MaxRetries,
-		MinRetryBackoff:    d.cfg.MaxRetryBackoff,
-		MaxRetryBackoff:    d.cfg.MaxRetryBackoff,
-		DialTimeout:        d.cfg.DialTimeout,
-		ReadTimeout:        d.cfg.ReadTimeout,
-		WriteTimeout:       d.cfg.WriteTimeout,
-		PoolSize:           d.cfg.PoolSize,
-		MinIdleConns:       d.cfg.MinIdleConns,
-		MaxConnAge:         d.cfg.MaxConnAge,
-		PoolTimeout:        d.cfg.PoolTimeout,
-		IdleTimeout:        d.cfg.IdleTimeout,
-		IdleCheckFrequency: d.cfg.IdleCheckFreq,
-		ReadOnly:           d.cfg.ReadOnly,
-		RouteByLatency:     d.cfg.RouteByLatency,
-		RouteRandomly:      d.cfg.RouteRandomly,
-		MasterName:         d.cfg.MasterName,
+		Addrs:            d.cfg.Addrs,
+		DB:               d.cfg.DB,
+		Username:         d.cfg.Username,
+		Password:         d.cfg.Password,
+		SentinelPassword: d.cfg.SentinelPassword,
+		MaxRetries:       d.cfg.MaxRetries,
+		MinRetryBackoff:  d.cfg.MaxRetryBackoff,
+		MaxRetryBackoff:  d.cfg.MaxRetryBackoff,
+		DialTimeout:      d.cfg.DialTimeout,
+		ReadTimeout:      d.cfg.ReadTimeout,
+		WriteTimeout:     d.cfg.WriteTimeout,
+		PoolSize:         d.cfg.PoolSize,
+		MinIdleConns:     d.cfg.MinIdleConns,
+		ConnMaxLifetime:  d.cfg.MaxConnAge,
+		PoolTimeout:      d.cfg.PoolTimeout,
+		ConnMaxIdleTime:  d.cfg.IdleTimeout,
+		ReadOnly:         d.cfg.ReadOnly,
+		RouteByLatency:   d.cfg.RouteByLatency,
+		RouteRandomly:    d.cfg.RouteRandomly,
+		MasterName:       d.cfg.MasterName,
 	})
 
 	return d, nil
