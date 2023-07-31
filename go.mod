@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/redis/go-redis/v9 v9.0.5
-	github.com/roadrunner-server/api/v4 v4.5.0
+	github.com/roadrunner-server/api/v4 v4.6.0
 	github.com/roadrunner-server/errors v1.2.0
 	github.com/roadrunner-server/sdk/v4 v4.3.1
 	go.uber.org/zap v1.24.0
