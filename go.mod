@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/redis/go-redis/v9 v9.0.5
+	github.com/redis/go-redis/v9 v9.1.0
 	github.com/roadrunner-server/api/v4 v4.6.2
 	github.com/roadrunner-server/errors v1.3.0
 	github.com/roadrunner-server/sdk/v4 v4.3.2
