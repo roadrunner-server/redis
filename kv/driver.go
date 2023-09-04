@@ -5,12 +5,12 @@ import (
 	stderr "errors"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
-	redis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/sdk/v4/utils"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 )
@@ -170,7 +170,7 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 			return nil, errors.E(op, cmd.Err())
 		}
 
-		m[k] = utils.AsBytes(cmd.Val())
+		m[k] = strToBytes(cmd.Val())
 	}
 
 	return m, nil
@@ -332,4 +332,12 @@ func (d *Driver) Clear() error {
 func (d *Driver) Stop() {
 	// close the connection
 	_ = d.universalClient.Close()
+}
+
+func strToBytes(data string) []byte {
+	if data == "" {
+		return nil
+	}
+
+	return unsafe.Slice(unsafe.StringData(data), len(data))
 }
