@@ -1,11 +1,14 @@
 package redis
 
 import (
+	"context"
 	"sync"
 
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
+	"github.com/roadrunner-server/endure/v2/dep"
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v4/kv"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +21,10 @@ type Configurer interface {
 	Has(name string) bool
 }
 
+type Tracer interface {
+	Tracer() *sdktrace.TracerProvider
+}
+
 type Logger interface {
 	NamedLogger(name string) *zap.Logger
 }
@@ -28,6 +35,8 @@ type Plugin struct {
 	cfgPlugin Configurer
 	// logger
 	log *zap.Logger
+	// otel tracer
+	tracer *sdktrace.TracerProvider
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
@@ -37,14 +46,34 @@ func (p *Plugin) Init(cfg Configurer, log Logger) error {
 	return nil
 }
 
+func (p *Plugin) Serve() chan error {
+	if p.tracer == nil {
+		// noop tracer
+		p.tracer = sdktrace.NewTracerProvider()
+	}
+	return make(chan error, 1)
+}
+
+func (p *Plugin) Stop(context.Context) error {
+	return nil
+}
+
 func (p *Plugin) Name() string {
 	return PluginName
+}
+
+func (p *Plugin) Collects() []*dep.In {
+	return []*dep.In{
+		dep.Fits(func(pp any) {
+			p.tracer = pp.(Tracer).Tracer()
+		}, (*Tracer)(nil)),
+	}
 }
 
 // KvFromConfig provides KV storage implementation over the redis plugin
 func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
 	const op = errors.Op("redis_plugin_provide")
-	st, err := rkv.NewRedisDriver(p.log, key, p.cfgPlugin)
+	st, err := rkv.NewRedisDriver(p.log, key, p.cfgPlugin, p.tracer)
 	if err != nil {
 		return nil, errors.E(op, err)
 	}

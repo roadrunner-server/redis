@@ -7,10 +7,16 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
+)
+
+const (
+	tracerName = "redis"
 )
 
 type Configurer interface {
@@ -22,15 +28,17 @@ type Configurer interface {
 
 type Driver struct {
 	universalClient redis.UniversalClient
+	tracer          *sdktrace.TracerProvider
 	log             *zap.Logger
 	cfg             *Config
 }
 
-func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer) (*Driver, error) {
+func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *sdktrace.TracerProvider) (*Driver, error) {
 	const op = errors.Op("new_redis_driver")
 
 	d := &Driver{
-		log: log,
+		log:    log,
+		tracer: tracer,
 	}
 
 	// will be different for every connected Driver
@@ -68,13 +76,27 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer) (*Driver,
 		MasterName:       d.cfg.MasterName,
 	})
 
+	err = redisotel.InstrumentMetrics(d.universalClient)
+	if err != nil {
+		d.log.Warn("failed to instrument redis metrics, driver will work without metrics", zap.Error(err))
+	}
+
+	err = redisotel.InstrumentTracing(d.universalClient)
+	if err != nil {
+		d.log.Warn("failed to instrument redis tracing, driver will work without tracing", zap.Error(err))
+	}
+
 	return d, nil
 }
 
 // Has checks if value exists.
 func (d *Driver) Has(keys ...string) (map[string]bool, error) {
 	const op = errors.Op("redis_driver_has")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:has")
+	defer span.End()
+
 	if keys == nil {
+		span.RecordError(errors.E(op, errors.Str("no keys")))
 		return nil, errors.E(op, errors.NoKeys)
 	}
 
@@ -82,10 +104,11 @@ func (d *Driver) Has(keys ...string) (map[string]bool, error) {
 	for _, key := range keys {
 		keyTrimmed := strings.TrimSpace(key)
 		if keyTrimmed == "" {
+			span.RecordError(errors.E(op, errors.Str("empty key")))
 			return nil, errors.E(op, errors.EmptyKey)
 		}
 
-		exist, err := d.universalClient.Exists(context.Background(), key).Result()
+		exist, err := d.universalClient.Exists(ctx, key).Result()
 		if err != nil {
 			return nil, err
 		}
@@ -93,18 +116,24 @@ func (d *Driver) Has(keys ...string) (map[string]bool, error) {
 			m[key] = true
 		}
 	}
+
 	return m, nil
 }
 
 // Get loads key content into slice.
 func (d *Driver) Get(key string) ([]byte, error) {
 	const op = errors.Op("redis_driver_get")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:get")
+	defer span.End()
+
 	// to get cases like "  "
 	keyTrimmed := strings.TrimSpace(key)
 	if keyTrimmed == "" {
+		span.RecordError(errors.E(op, errors.EmptyKey))
 		return nil, errors.E(op, errors.EmptyKey)
 	}
-	return d.universalClient.Get(context.Background(), key).Bytes()
+
+	return d.universalClient.Get(ctx, key).Bytes()
 }
 
 // MGet loads content of multiple values (some values might be skipped).
@@ -112,7 +141,10 @@ func (d *Driver) Get(key string) ([]byte, error) {
 // Returns slice with the interfaces with values
 func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 	const op = errors.Op("redis_driver_mget")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:mget")
+	defer span.End()
 	if keys == nil {
+		span.RecordError(errors.E(op, errors.NoKeys))
 		return nil, errors.E(op, errors.NoKeys)
 	}
 
@@ -120,6 +152,7 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 	for _, key := range keys {
 		keyTrimmed := strings.TrimSpace(key)
 		if keyTrimmed == "" {
+			span.RecordError(errors.E(op, errors.EmptyKey))
 			return nil, errors.E(op, errors.EmptyKey)
 		}
 	}
@@ -127,11 +160,13 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 	m := make(map[string][]byte, len(keys))
 
 	for _, k := range keys {
-		cmd := d.universalClient.Get(context.Background(), k)
+		cmd := d.universalClient.Get(ctx, k)
 		if cmd.Err() != nil {
 			if stderr.Is(cmd.Err(), redis.Nil) {
 				continue
 			}
+
+			span.RecordError(cmd.Err())
 			return nil, errors.E(op, cmd.Err())
 		}
 
@@ -149,38 +184,50 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 // Zero expiration means the key has no expiration time.
 func (d *Driver) Set(items ...kv.Item) error {
 	const op = errors.Op("redis_driver_set")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:set")
+	defer span.End()
+
 	if items == nil {
+		span.RecordError(errors.E(op, errors.NoKeys))
 		return errors.E(op, errors.NoKeys)
 	}
 	now := time.Now()
 	for _, item := range items {
 		if item == nil {
+			span.RecordError(errors.E(op, errors.EmptyKey))
 			return errors.E(op, errors.EmptyKey)
 		}
 
 		if item.Timeout() == "" {
-			err := d.universalClient.Set(context.Background(), item.Key(), item.Value(), 0).Err()
+			err := d.universalClient.Set(ctx, item.Key(), item.Value(), 0).Err()
 			if err != nil {
+				span.RecordError(err)
 				return err
 			}
 		} else {
 			t, err := time.Parse(time.RFC3339, item.Timeout())
 			if err != nil {
+				span.RecordError(err)
 				return err
 			}
-			err = d.universalClient.Set(context.Background(), item.Key(), item.Value(), t.Sub(now)).Err()
+			err = d.universalClient.Set(ctx, item.Key(), item.Value(), t.Sub(now)).Err()
 			if err != nil {
+				span.RecordError(err)
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
 // Delete one or multiple keys.
 func (d *Driver) Delete(keys ...string) error {
 	const op = errors.Op("redis_driver_delete")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:delete")
+
 	if keys == nil {
+		span.RecordError(errors.E(op, errors.NoKeys))
 		return errors.E(op, errors.NoKeys)
 	}
 
@@ -188,33 +235,40 @@ func (d *Driver) Delete(keys ...string) error {
 	for _, key := range keys {
 		keyTrimmed := strings.TrimSpace(key)
 		if keyTrimmed == "" {
+			span.RecordError(errors.E(op, errors.EmptyKey))
 			return errors.E(op, errors.EmptyKey)
 		}
 	}
-	return d.universalClient.Del(context.Background(), keys...).Err()
+
+	return d.universalClient.Del(ctx, keys...).Err()
 }
 
 // MExpire https://redis.io/commands/expire
 // timeout in RFC3339
 func (d *Driver) MExpire(items ...kv.Item) error {
 	const op = errors.Op("redis_driver_mexpire")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:mexpire")
+	defer span.End()
+
 	now := time.Now()
 	for _, item := range items {
 		if item == nil {
 			continue
 		}
 		if item.Timeout() == "" || strings.TrimSpace(item.Key()) == "" {
+			span.RecordError(errors.Str("should set timeout and at least one key"))
 			return errors.E(op, errors.Str("should set timeout and at least one key"))
 		}
 
 		t, err := time.Parse(time.RFC3339, item.Timeout())
 		if err != nil {
+			span.RecordError(err)
 			return err
 		}
 
 		// t guessed to be in future
 		// for Redis we use t.Sub, it will result in seconds, like 4.2s
-		d.universalClient.Expire(context.Background(), item.Key(), t.Sub(now))
+		d.universalClient.Expire(ctx, item.Key(), t.Sub(now))
 	}
 
 	return nil
@@ -224,7 +278,11 @@ func (d *Driver) MExpire(items ...kv.Item) error {
 // return time in seconds (float64) for a given keys
 func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 	const op = errors.Op("redis_driver_ttl")
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:ttl")
+	defer span.End()
+
 	if keys == nil {
+		span.RecordError(errors.E(op, errors.NoKeys))
 		return nil, errors.E(op, errors.NoKeys)
 	}
 
@@ -232,6 +290,7 @@ func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 	for _, key := range keys {
 		keyTrimmed := strings.TrimSpace(key)
 		if keyTrimmed == "" {
+			span.RecordError(errors.E(op, errors.EmptyKey))
 			return nil, errors.E(op, errors.EmptyKey)
 		}
 	}
@@ -239,8 +298,9 @@ func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 	m := make(map[string]string, len(keys))
 
 	for _, key := range keys {
-		duration, err := d.universalClient.TTL(context.Background(), key).Result()
+		duration, err := d.universalClient.TTL(ctx, key).Result()
 		if err != nil {
+			span.RecordError(err)
 			return nil, err
 		}
 
@@ -252,12 +312,17 @@ func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 
 		m[key] = time.Now().Add(duration).Format(time.RFC3339)
 	}
+
 	return m, nil
 }
 
 func (d *Driver) Clear() error {
-	fdb := d.universalClient.FlushDB(context.Background())
+	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:clear")
+	defer span.End()
+
+	fdb := d.universalClient.FlushDB(ctx)
 	if fdb.Err() != nil {
+		span.RecordError(fdb.Err())
 		return fdb.Err()
 	}
 
