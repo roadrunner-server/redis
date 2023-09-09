@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"context"
 	"sync"
 
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
@@ -42,19 +41,8 @@ type Plugin struct {
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
 	p.log = log.NamedLogger(PluginName)
 	p.cfgPlugin = cfg
+	p.tracer = sdktrace.NewTracerProvider()
 
-	return nil
-}
-
-func (p *Plugin) Serve() chan error {
-	if p.tracer == nil {
-		// noop tracer
-		p.tracer = sdktrace.NewTracerProvider()
-	}
-	return make(chan error, 1)
-}
-
-func (p *Plugin) Stop(context.Context) error {
 	return nil
 }
 
