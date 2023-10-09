@@ -28,8 +28,8 @@ github.com/redis/go-redis/v9 v9.2.1 h1:WlYJg71ODF0dVspZZCpYmoF1+U1Jjk9Rwd7pq6Qml
 github.com/redis/go-redis/v9 v9.2.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
 github.com/roadrunner-server/api/v4 v4.9.0 h1:KUpNhLyten1ndNOpfH6PaqxGwXhBCzNh/TTuAc2dEak=
 github.com/roadrunner-server/api/v4 v4.9.0/go.mod h1:MLlo240PUqFCd9ywAu6k79JHbK43j69Q5+lEIPJgjRg=
-github.com/roadrunner-server/endure/v2 v2.4.2 h1:aFnPc321l5HDzE2mN5wwfksJ40lgXwfU3RSqdS1LyUQ=
-github.com/roadrunner-server/endure/v2 v2.4.2/go.mod h1:vWTvn6NiYxUBDgwAyjv92i/qFemSUs+cTItMZvc5Zsk=
+github.com/roadrunner-server/endure/v2 v2.4.3 h1:R9DdsLiLjtSFivZ1HKk/1eDZ0TYaKHQzakVwz9D2hto=
+github.com/roadrunner-server/endure/v2 v2.4.3/go.mod h1:4n3PdwZ3h/IRL2enDGvEVXtaQgqRnZ74VOyZtOJq528=
 github.com/roadrunner-server/errors v1.3.0 h1:kLVXpXne0jMReN7pj8KIhyYyjqKjsPC5DRGqMsd4/Fo=
 github.com/roadrunner-server/errors v1.3.0/go.mod h1:XYVuhXvxi3yQaP/zCLB6QRZ0JvQIRaBa0SKFHL4WLKg=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
