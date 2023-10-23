@@ -6,13 +6,13 @@ toolchain go1.21.1
 
 require (
 	github.com/roadrunner-server/api/v4 v4.9.0
-	github.com/roadrunner-server/config/v4 v4.4.7
+	github.com/roadrunner-server/config/v4 v4.4.8
 	github.com/roadrunner-server/endure/v2 v2.4.3
 	github.com/roadrunner-server/goridge/v3 v3.8.1
-	github.com/roadrunner-server/kv/v4 v4.4.5
-	github.com/roadrunner-server/logger/v4 v4.2.5
-	github.com/roadrunner-server/redis/v4 v4.2.6
-	github.com/roadrunner-server/rpc/v4 v4.2.6
+	github.com/roadrunner-server/kv/v4 v4.4.6
+	github.com/roadrunner-server/logger/v4 v4.2.6
+	github.com/roadrunner-server/redis/v4 v4.2.7
+	github.com/roadrunner-server/rpc/v4 v4.2.7
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
 )
@@ -24,7 +24,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.15.0 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
