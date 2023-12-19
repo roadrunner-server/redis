@@ -6,8 +6,8 @@ toolchain go1.21.0
 
 require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5
-	github.com/redis/go-redis/v9 v9.3.0
-	github.com/roadrunner-server/api/v4 v4.9.0
+	github.com/redis/go-redis/v9 v9.3.1
+	github.com/roadrunner-server/api/v4 v4.10.0
 	github.com/roadrunner-server/endure/v2 v2.4.3
 	github.com/roadrunner-server/errors v1.3.0
 	go.opentelemetry.io/otel/sdk v1.21.0
