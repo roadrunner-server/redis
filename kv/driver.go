@@ -225,6 +225,7 @@ func (d *Driver) Set(items ...kv.Item) error {
 func (d *Driver) Delete(keys ...string) error {
 	const op = errors.Op("redis_driver_delete")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:delete")
+	defer span.End()
 
 	if keys == nil {
 		span.RecordError(errors.E(op, errors.NoKeys))
