@@ -2,7 +2,7 @@ module tests
 
 go 1.21
 
-toolchain go1.22rc1
+toolchain go1.22rc2
 
 require (
 	github.com/roadrunner-server/api/v4 v4.10.0
@@ -39,7 +39,7 @@ require (
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/v9 v9.4.0 // indirect
-	github.com/roadrunner-server/errors v1.3.0 // indirect
+	github.com/roadrunner-server/errors v1.4.0 // indirect
 	github.com/roadrunner-server/sdk/v4 v4.5.6 // indirect
 	github.com/roadrunner-server/tcplisten v1.4.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
