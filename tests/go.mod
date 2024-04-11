@@ -4,13 +4,13 @@ go 1.22.2
 
 require (
 	github.com/roadrunner-server/api/v4 v4.12.0
-	github.com/roadrunner-server/config/v4 v4.6.9
+	github.com/roadrunner-server/config/v4 v4.7.0
 	github.com/roadrunner-server/endure/v2 v2.4.4
 	github.com/roadrunner-server/goridge/v3 v3.8.2
 	github.com/roadrunner-server/kv/v4 v4.4.16
-	github.com/roadrunner-server/logger/v4 v4.2.16
+	github.com/roadrunner-server/logger/v4 v4.3.0
 	github.com/roadrunner-server/redis/v4 v4.2.18
-	github.com/roadrunner-server/rpc/v4 v4.2.17
+	github.com/roadrunner-server/rpc/v4 v4.3.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
@@ -38,7 +38,7 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/v9 v9.5.1 // indirect
 	github.com/roadrunner-server/errors v1.4.0 // indirect
-	github.com/roadrunner-server/sdk/v4 v4.6.0 // indirect
+	github.com/roadrunner-server/sdk/v4 v4.7.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.4.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
