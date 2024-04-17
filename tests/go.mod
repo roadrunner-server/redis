@@ -4,13 +4,13 @@ go 1.22.2
 
 require (
 	github.com/roadrunner-server/api/v4 v4.12.0
-	github.com/roadrunner-server/config/v4 v4.7.0
+	github.com/roadrunner-server/config/v4 v4.8.0
 	github.com/roadrunner-server/endure/v2 v2.4.4
 	github.com/roadrunner-server/goridge/v3 v3.8.2
-	github.com/roadrunner-server/kv/v4 v4.5.0
-	github.com/roadrunner-server/logger/v4 v4.3.0
+	github.com/roadrunner-server/kv/v4 v4.6.0
+	github.com/roadrunner-server/logger/v4 v4.4.0
 	github.com/roadrunner-server/redis/v4 v4.2.18
-	github.com/roadrunner-server/rpc/v4 v4.3.0
+	github.com/roadrunner-server/rpc/v4 v4.4.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
@@ -32,7 +32,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 // indirect
@@ -55,7 +55,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.25.0 // indirect
 	go.opentelemetry.io/otel/trace v1.25.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
+	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
