@@ -1,6 +1,6 @@
 module github.com/roadrunner-server/redis/v4
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5
