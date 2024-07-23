@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.5.3
 	github.com/redis/go-redis/v9 v9.5.4
-	github.com/roadrunner-server/api/v4 v4.15.0
+	github.com/roadrunner-server/api/v4 v4.16.0
 	github.com/roadrunner-server/endure/v2 v2.4.5
 	github.com/roadrunner-server/errors v1.4.0
 	github.com/roadrunner-server/redis/v4 v4.4.5
