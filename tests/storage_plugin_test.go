@@ -14,13 +14,13 @@ import (
 	mocklogger "tests/mock"
 
 	kvProto "github.com/roadrunner-server/api/v4/build/kv/v1"
-	"github.com/roadrunner-server/config/v4"
+	"github.com/roadrunner-server/config/v5"
 	"github.com/roadrunner-server/endure/v2"
 	goridgeRpc "github.com/roadrunner-server/goridge/v3/pkg/rpc"
-	"github.com/roadrunner-server/kv/v4"
-	"github.com/roadrunner-server/logger/v4"
+	"github.com/roadrunner-server/kv/v5"
+	"github.com/roadrunner-server/logger/v5"
 	"github.com/roadrunner-server/redis/v5"
-	rpcPlugin "github.com/roadrunner-server/rpc/v4"
+	rpcPlugin "github.com/roadrunner-server/rpc/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -30,9 +30,8 @@ func TestRedis(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-redis.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -97,9 +96,8 @@ func TestRedisGlobalSection(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-redis-global.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -164,9 +162,8 @@ func TestRedisNoConfig(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-redis-no-config.yaml", // should be used default
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
