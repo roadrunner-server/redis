@@ -44,7 +44,7 @@ jobs:
           cd tests
           mkdir ./coverage-ci
 
-          docker-compose -f env/docker-compose-redis.yaml up -d
+          docker compose -f env/docker-compose-redis.yaml up -d
           sleep 30
           if [ "$(docker ps -q -f status=running -f name=redis_1)" ]; then
           echo "Redis Docker container started successfully."
