@@ -8,7 +8,7 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.5.3
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/roadrunner-server/api/v4 v4.16.0
-	github.com/roadrunner-server/endure/v2 v2.5.0
+	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/errors v1.4.1
 	go.opentelemetry.io/otel/sdk v1.29.0
 	go.uber.org/zap v1.27.0
