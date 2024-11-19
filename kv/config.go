@@ -26,11 +26,7 @@ type Config struct {
 	IdleTimeout      time.Duration `mapstructure:"idle_timeout"`
 	IdleCheckFreq    time.Duration `mapstructure:"idle_check_freq"`
 	ReadOnly         bool          `mapstructure:"read_only"`
-	TLSConfig        TLSConfig     `mapstructure:"tls"`
-}
-
-type TLSConfig struct {
-	CaFile string `mapstructure:"ca_file"`
+	TLSConfig        *TLSConfig    `mapstructure:"tls"`
 }
 
 // InitDefaults initializing fill config with default values

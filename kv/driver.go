@@ -2,10 +2,7 @@ package kv
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	stderr "errors"
-	"os"
 	"strings"
 	"time"
 	"unsafe"
@@ -56,7 +53,12 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 
 	d.cfg.InitDefaults()
 
-	redisOptions := &redis.UniversalOptions{
+	tlsConfig, tlsConfigErr := NewTLSConfig(d.cfg.TLSConfig, log)
+	if tlsConfigErr != nil {
+		return nil, errors.E(op, tlsConfigErr)
+	}
+
+	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
 		Addrs:            d.cfg.Addrs,
 		DB:               d.cfg.DB,
 		Username:         d.cfg.Username,
@@ -77,37 +79,8 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		RouteByLatency:   d.cfg.RouteByLatency,
 		RouteRandomly:    d.cfg.RouteRandomly,
 		MasterName:       d.cfg.MasterName,
-	}
-
-	if d.cfg.TLSConfig.CaFile != "" {
-		tlsConfig := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}
-
-		rootCAs, sysCertErr := x509.SystemCertPool()
-		if sysCertErr != nil {
-			rootCAs = x509.NewCertPool()
-			d.log.Warn("unable to load system certificate pool, using empty pool", zap.Error(sysCertErr))
-		}
-
-		if _, crtExistErr := os.Stat(d.cfg.TLSConfig.CaFile); crtExistErr != nil {
-			return nil, errors.E(op, crtExistErr)
-		}
-
-		bytes, crtReadErr := os.ReadFile(d.cfg.TLSConfig.CaFile)
-		if crtReadErr != nil {
-			return nil, errors.E(op, crtReadErr)
-		}
-
-		if !rootCAs.AppendCertsFromPEM(bytes) {
-			return nil, errors.E(op, errors.Errorf("failed to parse certificates from PEM file '%s'. Please ensure the file contains valid PEM-encoded certificates", d.cfg.TLSConfig.CaFile))
-		}
-
-		tlsConfig.RootCAs = rootCAs
-		redisOptions.TLSConfig = tlsConfig
-	}
-
-	d.universalClient = redis.NewUniversalClient(redisOptions)
+		TLSConfig:        tlsConfig,
+	})
 
 	err = redisotel.InstrumentMetrics(d.universalClient)
 	if err != nil {
