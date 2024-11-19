@@ -82,9 +82,10 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	}
-	rootCAs, _ := x509.SystemCertPool()
-	if rootCAs == nil {
+	rootCAs, sysCertErr := x509.SystemCertPool()
+	if sysCertErr != nil {
 		rootCAs = x509.NewCertPool()
+		d.log.Warn("unable to load system certificate pool, using empty pool", zap.Error(sysCertErr))
 	}
 
 	if d.cfg.TLSConfig.CaFile != "" {
