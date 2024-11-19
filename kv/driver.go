@@ -100,7 +100,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		}
 
 		if !rootCAs.AppendCertsFromPEM(bytes) {
-			return nil, errors.E(op, errors.Errorf("failed to append certs from PEM file: %s", d.cfg.TLSConfig.CaFile))
+			return nil, errors.E(op, errors.Errorf("failed to parse certificates from PEM file '%s'. Please ensure the file contains valid PEM-encoded certificates", d.cfg.TLSConfig.CaFile))
 		}
 
 		tlsConfig.RootCAs = rootCAs
