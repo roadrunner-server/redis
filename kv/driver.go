@@ -79,14 +79,12 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		MasterName:       d.cfg.MasterName,
 	}
 
-	tlsConfig := &tls.Config{}
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 	rootCAs, _ := x509.SystemCertPool()
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
-	}
-
-	if d.cfg.TLSConfig.MinVersion != "" {
-		tlsConfig.MinVersion = d.cfg.TLSConfig.TLSVersion()
 	}
 
 	if d.cfg.TLSConfig.CaFile != "" {
@@ -102,9 +100,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		if !rootCAs.AppendCertsFromPEM(bytes) {
 			return nil, errors.E(op, errors.Errorf("failed to append certs from PEM file: %s", d.cfg.TLSConfig.CaFile))
 		}
-	}
 
-	if d.cfg.TLSConfig.CaFile != "" || d.cfg.TLSConfig.MinVersion != "" {
 		tlsConfig.RootCAs = rootCAs
 		redisOptions.TLSConfig = tlsConfig
 	}

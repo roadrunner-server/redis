@@ -1,7 +1,6 @@
 package kv
 
 import (
-	"crypto/tls"
 	"time"
 )
 
@@ -31,26 +30,12 @@ type Config struct {
 }
 
 type TLSConfig struct {
-	MinVersion string `mapstructure:"min_version"`
-	CaFile     string `mapstructure:"ca_file"`
+	CaFile string `mapstructure:"ca_file"`
 }
 
 // InitDefaults initializing fill config with default values
 func (s *Config) InitDefaults() {
 	if s.Addrs == nil {
 		s.Addrs = []string{"127.0.0.1:6379"} // default addr is pointing to local storage
-	}
-}
-
-func (t *TLSConfig) TLSVersion() uint16 {
-	switch t.MinVersion {
-	case "1.0":
-		return tls.VersionTLS10
-	case "1.1":
-		return tls.VersionTLS11
-	case "1.2":
-		return tls.VersionTLS12
-	default:
-		return tls.VersionTLS13
 	}
 }
