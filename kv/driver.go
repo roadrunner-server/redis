@@ -2,7 +2,10 @@ package kv
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	stderr "errors"
+	"os"
 	"strings"
 	"time"
 	"unsafe"
@@ -53,7 +56,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 
 	d.cfg.InitDefaults()
 
-	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
+	redisOptions := &redis.UniversalOptions{
 		Addrs:            d.cfg.Addrs,
 		DB:               d.cfg.DB,
 		Username:         d.cfg.Username,
@@ -74,7 +77,39 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		RouteByLatency:   d.cfg.RouteByLatency,
 		RouteRandomly:    d.cfg.RouteRandomly,
 		MasterName:       d.cfg.MasterName,
-	})
+	}
+
+	tlsConfig := &tls.Config{}
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	if d.cfg.TLSConfig.MinVersion != "" {
+		tlsConfig.MinVersion = d.cfg.TLSConfig.TLSVersion()
+	}
+
+	if d.cfg.TLSConfig.CaFile != "" {
+		if _, crtExistErr := os.Stat(d.cfg.TLSConfig.CaFile); crtExistErr != nil {
+			return nil, errors.E(op, crtExistErr)
+		}
+
+		bytes, crtReadErr := os.ReadFile(d.cfg.TLSConfig.CaFile)
+		if crtReadErr != nil {
+			return nil, errors.E(op, crtReadErr)
+		}
+
+		if !rootCAs.AppendCertsFromPEM(bytes) {
+			return nil, errors.E(op, errors.Errorf("failed to append certs from PEM file: %s", d.cfg.TLSConfig.CaFile))
+		}
+	}
+
+	if d.cfg.TLSConfig.CaFile != "" || d.cfg.TLSConfig.MinVersion != "" {
+		tlsConfig.RootCAs = rootCAs
+		redisOptions.TLSConfig = tlsConfig
+	}
+
+	d.universalClient = redis.NewUniversalClient(redisOptions)
 
 	err = redisotel.InstrumentMetrics(d.universalClient)
 	if err != nil {
