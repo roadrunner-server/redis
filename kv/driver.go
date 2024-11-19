@@ -53,9 +53,9 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 
 	d.cfg.InitDefaults()
 
-	tlsConfig, tlsConfigErr := NewTLSConfig(d.cfg.TLSConfig, log)
-	if tlsConfigErr != nil {
-		return nil, errors.E(op, tlsConfigErr)
+	tlsConfig, err := tlsConfig(d.cfg.TLSConfig)
+	if err != nil {
+		return nil, errors.E(op, err)
 	}
 
 	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
