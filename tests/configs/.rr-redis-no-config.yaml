@@ -10,6 +10,3 @@ logs:
 kv:
   redis-rr:
     driver: redis
-    config:
-      addrs:
-        - "127.0.0.1:16379"
