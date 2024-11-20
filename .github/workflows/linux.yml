@@ -20,6 +20,7 @@ jobs:
         php: [ "8.3" ]
         go: [ stable ]
         os: [ "ubuntu-latest" ]
+
     steps:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v5 # action page: <https://github.com/actions/setup-go>
@@ -38,6 +39,30 @@ jobs:
 
       - name: Install Go dependencies
         run: go mod download
+
+      - name: Install Redis
+        run: |
+          sudo apt update
+          sudo apt-get install -y lsb-release curl gpg libnss3-tools
+          curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+          sudo chmod 644 /usr/share/keyrings/redis-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+          sudo apt-get update
+          sudo apt-get install redis
+
+      - name: Start Redis with TLS
+        run: |
+          cd tests
+          curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+          chmod +x mkcert-v*-linux-amd64
+          sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+          mkcert -install
+          mkcert localhost 127.0.0.1 ::1
+          mkcert -client localhost 127.0.0.1 ::1 
+          mkdir certs
+          cp -r localhost+2-client-key.pem localhost+2-client.pem localhost+2-key.pem localhost+2.pem certs/
+          cp -r $(mkcert -CAROOT)/rootCA.pem certs/
+          redis-server --tls-port 6380 --port 6379 --tls-cert-file localhost+2.pem --tls-key-file localhost+2-key.pem --tls-ca-cert-file rootCA.pem --daemonize yes
 
       - name: Run golang tests with coverage
         run: |

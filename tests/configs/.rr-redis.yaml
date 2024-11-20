@@ -5,7 +5,7 @@ rpc:
 
 logs:
   mode: development
-  level: error
+  level: debug
 
 kv:
   redis-rr:

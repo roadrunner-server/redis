@@ -116,7 +116,7 @@ func defaultTLSConfig(cfg *TLSConfig) *tls.Config {
 
 // getClientCertificate is used for tls.Config struct field GetClientCertificate and enables re-fetching the client certificates when they expire
 func getClientCertificate(cfg *TLSConfig) func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-	if cfg == nil || cfg.Cert == "" || cfg.Key == "" {
+	if cfg == nil || (cfg.Cert == "" && cfg.Key == "") {
 		return nil
 	}
 	return func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
