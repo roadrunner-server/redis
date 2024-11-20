@@ -14,6 +14,6 @@ kv:
       addrs:
         - "127.0.0.1:16380"
       tls:
-        cert: ./certs/localhost+2-client.pem
-        key: ./certs/localhost+2-client-key.pem
-        root_ca: ./certs/rootCA.pem
+        cert: ./certs/client.crt
+        key: ./certs/client.key
+        root_ca: ./certs/ca.crt
