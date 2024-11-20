@@ -50,11 +50,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install redis
 
+      - name: Generate TLS certificates
+        run: |
+          cd tests/certs
+          ./get-test-certs.sh
+
       - name: Run golang tests with coverage
         run: |
           cd tests
           mkdir ./coverage-ci
           redis-server --tls-port 16380 --port 6379 --tls-cert-file certs/server.crt --tls-key-file certs/server.key --tls-ca-cert-file certs/ca.crt --daemonize yes
+          sleep 5
+          redis-cli -h 127.0.0.1 -p 16380 --cert certs/client.crt --key certs/client.key --cacert certs/ca.crt --tls ping
           go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat pkgs.txt) -coverprofile=./coverage-ci/redis.out -covermode=atomic storage_plugin_test.go
 
       - name: Archive code coverage results
