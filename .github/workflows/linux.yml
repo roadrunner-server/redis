@@ -50,7 +50,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install redis
 
-      - name: Start Redis with TLS
+      - name: Init Redis with TLS
         run: |
           cd tests
           curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
@@ -62,15 +62,13 @@ jobs:
           mkdir certs
           cp -r localhost+2-client-key.pem localhost+2-client.pem localhost+2-key.pem localhost+2.pem certs/
           cp -r $(mkcert -CAROOT)/rootCA.pem certs/
-          redis-server --tls-port 16380 --port 6379 --tls-cert-file certs/localhost+2.pem --tls-key-file certs/localhost+2-key.pem --tls-ca-cert-file certs/rootCA.pem --daemonize yes
 
       - name: Run golang tests with coverage
         run: |
           cd tests
           mkdir ./coverage-ci
-
+          redis-server --tls-port 16380 --port 6379 --tls-cert-file certs/localhost+2.pem --tls-key-file certs/localhost+2-key.pem --tls-ca-cert-file certs/rootCA.pem --daemonize yes
           go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat pkgs.txt) -coverprofile=./coverage-ci/redis.out -covermode=atomic storage_plugin_test.go
-          docker compose -f env/docker-compose-redis.yaml down
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
