@@ -53,6 +53,11 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 
 	d.cfg.InitDefaults()
 
+	tlsConfig, err := tlsConfig(d.cfg.TLSConfig)
+	if err != nil {
+		return nil, errors.E(op, err)
+	}
+
 	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
 		Addrs:            d.cfg.Addrs,
 		DB:               d.cfg.DB,
@@ -74,6 +79,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 		RouteByLatency:   d.cfg.RouteByLatency,
 		RouteRandomly:    d.cfg.RouteRandomly,
 		MasterName:       d.cfg.MasterName,
+		TLSConfig:        tlsConfig,
 	})
 
 	err = redisotel.InstrumentMetrics(d.universalClient)
