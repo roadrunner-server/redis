@@ -141,6 +141,28 @@
       "description": "Whether the Redis connection is in read-only mode. See https://redis.io/docs/latest/commands/readonly.",
       "type": "boolean",
       "default": false
+    },
+    "tls": {
+      "description": "GRPC TLS configuration",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "$ref": "https://raw.githubusercontent.com/roadrunner-server/http/refs/heads/master/schema.json#/$defs/SSL/properties/key"
+        },
+        "cert": {
+          "$ref": "https://raw.githubusercontent.com/roadrunner-server/http/refs/heads/master/schema.json#/$defs/SSL/properties/cert"
+        },
+        "root_ca": {
+          "$ref": "https://raw.githubusercontent.com/roadrunner-server/http/refs/heads/master/schema.json#/$defs/SSL/properties/root_ca"
+        },
+        "client_auth_type": {
+          "$ref": "https://raw.githubusercontent.com/roadrunner-server/http/refs/heads/master/schema.json#/$defs/ClientAuthType"
+        }
+      },
+      "required": [
+        "root_ca"
+      ]
     }
   },
   "$defs": {
