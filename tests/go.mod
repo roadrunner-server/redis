@@ -9,11 +9,11 @@ require (
 	github.com/roadrunner-server/config/v5 v5.0.4
 	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/goridge/v3 v3.8.3
-	github.com/roadrunner-server/kv/v5 v5.0.4
+	github.com/roadrunner-server/kv/v5 v5.1.0
 	github.com/roadrunner-server/logger/v5 v5.0.4
 	github.com/roadrunner-server/redis/v5 v5.0.0
 	github.com/roadrunner-server/rpc/v5 v5.0.4
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
 )
 
