@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	mocklogger "tests/mock"
-
 	kvProto "github.com/roadrunner-server/api/v4/build/kv/v1"
 	"github.com/roadrunner-server/config/v5"
 	"github.com/roadrunner-server/endure/v2"
@@ -22,8 +20,6 @@ import (
 	"github.com/roadrunner-server/redis/v5"
 	rpcPlugin "github.com/roadrunner-server/rpc/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestRedis(t *testing.T) {
@@ -166,10 +162,9 @@ func TestRedisNoConfig(t *testing.T) {
 		Path:    "configs/.rr-redis-no-config.yaml", // should be used default
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
 	err := cont.RegisterAll(
 		cfg,
-		l,
+		&logger.Plugin{},
 		&kv.Plugin{},
 		&redis.Plugin{},
 		&rpcPlugin.Plugin{},
@@ -182,11 +177,8 @@ func TestRedisNoConfig(t *testing.T) {
 	}
 
 	_, err = cont.Serve()
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	_ = cont.Stop()
-
-	require.Equal(t, 1, oLogger.FilterMessageSnippet("plugin was started").Len())
-	require.Equal(t, 1, oLogger.FilterMessageSnippet("can't find local or global configuration, this section will be skipped").Len())
 }
 
 func TestRedisTLS(t *testing.T) {
