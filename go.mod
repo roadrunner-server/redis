@@ -6,7 +6,7 @@ toolchain go1.24.0
 
 require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.0
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.1
 	github.com/roadrunner-server/api/v4 v4.18.1
 	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/errors v1.4.1
