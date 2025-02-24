@@ -64,10 +64,10 @@ github.com/roadrunner-server/goridge/v3 v3.8.3 h1:XmjrOFnI6ZbQTPaP39DEk8KwLUNTgj
 github.com/roadrunner-server/goridge/v3 v3.8.3/go.mod h1:4TZU8zgkKIZCsH51qwGMpvyXCT59u/8z6q8sCe4ZGAQ=
 github.com/roadrunner-server/kv/v5 v5.2.5 h1:AV8wFDDdAtZrAGyT3KBp/vtzI8GdSV0k/CFmj6WLw6g=
 github.com/roadrunner-server/kv/v5 v5.2.5/go.mod h1:NyOu8aRywCtRBHNN+ulBki8AWPeLOjoDrLbnnKK5nQ4=
-github.com/roadrunner-server/logger/v5 v5.1.4 h1:Kw3r+jXDnBFFXf/NuovB4Gx7IkteBIY8rsi2wmm3bJs=
-github.com/roadrunner-server/logger/v5 v5.1.4/go.mod h1:iuED4cATF8Qa7WfNwAvPeCrapfkjHjghtsjgsZcW3Qo=
-github.com/roadrunner-server/rpc/v5 v5.1.4 h1:UGiRo/nEAK2CgQr6fBPtc7PpPSNlylG/CHjY4pLyIEg=
-github.com/roadrunner-server/rpc/v5 v5.1.4/go.mod h1:rIiVN1oza6gm8phju3giBmZtFNmZQdjvSKki1sdODjQ=
+github.com/roadrunner-server/logger/v5 v5.1.5 h1:JankpP3sApSOWanH8yfdB/3zXafHgtzi8YsFMhchx/Y=
+github.com/roadrunner-server/logger/v5 v5.1.5/go.mod h1:iuED4cATF8Qa7WfNwAvPeCrapfkjHjghtsjgsZcW3Qo=
+github.com/roadrunner-server/rpc/v5 v5.1.5 h1:vmbNtqzpqz7y4RPi0BvHgVGZuFrSqH9pOAyKNbC58zI=
+github.com/roadrunner-server/rpc/v5 v5.1.5/go.mod h1:rIiVN1oza6gm8phju3giBmZtFNmZQdjvSKki1sdODjQ=
 github.com/roadrunner-server/tcplisten v1.5.2 h1:nn8yXYrhRDkfQ9AAu4V075uT4fZRmOnpxkawgE+bWPA=
 github.com/roadrunner-server/tcplisten v1.5.2/go.mod h1:DufGBz7Dlx2KrNe/4RukEvGMTqZKB0Uve1GztwcyyR8=
 github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=
