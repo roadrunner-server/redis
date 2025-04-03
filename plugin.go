@@ -3,6 +3,8 @@ package redis
 import (
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redis/go-redis/extra/redisprometheus/v9"
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/endure/v2/dep"
 	"github.com/roadrunner-server/errors"
@@ -36,6 +38,8 @@ type Plugin struct {
 	log *zap.Logger
 	// otel tracer
 	tracer *sdktrace.TracerProvider
+	// prometheus metrics
+	metricsCollector *redisprometheus.Collector
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
@@ -66,5 +70,11 @@ func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
 		return nil, errors.E(op, err)
 	}
 
+	p.metricsCollector = st.MetricsCollector()
+
 	return st, nil
+}
+
+func (p *Plugin) MetricsCollector() []prometheus.Collector {
+	return []prometheus.Collector{p.metricsCollector}
 }

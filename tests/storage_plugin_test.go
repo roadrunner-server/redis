@@ -1,8 +1,11 @@
 package kv
 
 import (
+	"github.com/roadrunner-server/metrics/v5"
+	"io"
 	"log/slog"
 	"net"
+	"net/http"
 	"net/rpc"
 	"os"
 	"os/signal"
@@ -247,6 +250,85 @@ func TestRedisTLS(t *testing.T) {
 	wg.Wait()
 }
 
+func TestRedisMetrics(t *testing.T) {
+	cont := endure.New(slog.LevelDebug)
+
+	cfg := &config.Plugin{
+		Version: "2024.2.0",
+		Path:    "configs/.rr-redis-metrics.yaml",
+	}
+
+	err := cont.RegisterAll(
+		cfg,
+		&kv.Plugin{},
+		&redis.Plugin{},
+		&rpcPlugin.Plugin{},
+		&logger.Plugin{},
+		&metrics.Plugin{},
+	)
+	assert.NoError(t, err)
+
+	err = cont.Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ch, err := cont.Serve()
+	assert.NoError(t, err)
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	stopCh := make(chan struct{}, 1)
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case e := <-ch:
+				assert.Fail(t, "error", e.Error.Error())
+				err = cont.Stop()
+				if err != nil {
+					assert.FailNow(t, "error", err.Error())
+				}
+			case <-sig:
+				err = cont.Stop()
+				if err != nil {
+					assert.FailNow(t, "error", err.Error())
+				}
+				return
+			case <-stopCh:
+				// timeout
+				err = cont.Stop()
+				if err != nil {
+					assert.FailNow(t, "error", err.Error())
+				}
+				return
+			}
+		}
+	}()
+
+	time.Sleep(time.Second * 1)
+	t.Run("REDIS", testRPCMethodsRedis("127.0.0.1:6001"))
+
+	time.Sleep(time.Second * 2)
+	out, err := get("http://[::1]:2112/metrics")
+	assert.NoError(t, err)
+
+	assert.Contains(t, out, "rr_redis_pool_conn_idle_current")
+	assert.Contains(t, out, "rr_redis_pool_conn_stale_total")
+	assert.Contains(t, out, "rr_redis_pool_conn_total_current")
+	assert.Contains(t, out, "rr_redis_pool_hit_total")
+	assert.Contains(t, out, "rr_redis_pool_miss_total")
+	assert.Contains(t, out, "rr_redis_pool_timeout_total")
+
+	stopCh <- struct{}{}
+	wg.Wait()
+}
+
 func testRPCMethodsRedis(addr string) func(t *testing.T) {
 	return func(t *testing.T) {
 		conn, err := net.Dial("tcp", addr)
@@ -445,4 +527,23 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 0) // should be 5
 	}
+}
+
+func get(address string) (string, error) {
+	r, err := http.Get(address) //nolint:gosec
+	if err != nil {
+		return "", err
+	}
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		return "", err
+	}
+	// unsafe
+	return string(b), err
 }

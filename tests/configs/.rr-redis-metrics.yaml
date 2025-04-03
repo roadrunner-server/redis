@@ -1,0 +1,18 @@
+version: '3'
+
+rpc:
+  listen: tcp://127.0.0.1:6001
+
+logs:
+  mode: development
+  level: debug
+
+kv:
+  redis-rr:
+    driver: redis
+    config:
+      addrs:
+        - "127.0.0.1:16379"
+
+metrics:
+  address: 0.0.0.0:2112
