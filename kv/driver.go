@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/extra/redisprometheus/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
 	"github.com/roadrunner-server/errors"
@@ -27,10 +28,11 @@ type Configurer interface {
 }
 
 type Driver struct {
-	universalClient redis.UniversalClient
-	tracer          *sdktrace.TracerProvider
-	log             *zap.Logger
-	cfg             *Config
+	universalClient  redis.UniversalClient
+	tracer           *sdktrace.TracerProvider
+	log              *zap.Logger
+	cfg              *Config
+	metricsCollector *redisprometheus.Collector
 }
 
 func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *sdktrace.TracerProvider) (*Driver, error) {
@@ -91,6 +93,8 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 	if err != nil {
 		d.log.Warn("failed to instrument redis tracing, driver will work without tracing", zap.Error(err))
 	}
+
+	d.metricsCollector = redisprometheus.NewCollector("rr", "redis", d.universalClient)
 
 	return d, nil
 }
@@ -339,6 +343,10 @@ func (d *Driver) Clear() error {
 func (d *Driver) Stop() {
 	// close the connection
 	_ = d.universalClient.Close()
+}
+
+func (d *Driver) MetricsCollector() *redisprometheus.Collector {
+	return d.metricsCollector
 }
 
 func strToBytes(data string) []byte {

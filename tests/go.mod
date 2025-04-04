@@ -11,6 +11,7 @@ require (
 	github.com/roadrunner-server/goridge/v3 v3.8.3
 	github.com/roadrunner-server/kv/v5 v5.2.6
 	github.com/roadrunner-server/logger/v5 v5.1.6
+	github.com/roadrunner-server/metrics/v5 v5.1.6
 	github.com/roadrunner-server/redis/v5 v5.0.0
 	github.com/roadrunner-server/rpc/v5 v5.1.6
 	github.com/stretchr/testify v1.10.0
@@ -20,6 +21,7 @@ require (
 replace github.com/roadrunner-server/redis/v5 => ../
 
 require (
+	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -31,12 +33,19 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/prometheus/client_golang v1.21.0 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/common v0.62.0 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.7.3 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.3 // indirect
+	github.com/redis/go-redis/extra/redisprometheus/v9 v9.7.3 // indirect
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/roadrunner-server/errors v1.4.1 // indirect
 	github.com/roadrunner-server/tcplisten v1.5.2 // indirect
