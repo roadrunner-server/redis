@@ -7,8 +7,8 @@ toolchain go1.24.0
 require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.3
-	github.com/redis/go-redis/extra/redisprometheus/v9 v9.7.3
-	github.com/redis/go-redis/v9 v9.7.3
+	github.com/redis/go-redis/extra/redisprometheus/v9 v9.8.0
+	github.com/redis/go-redis/v9 v9.8.0
 	github.com/roadrunner-server/api/v4 v4.19.0
 	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/errors v1.4.1
