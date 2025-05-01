@@ -31,7 +31,7 @@ type Logger interface {
 }
 
 type Plugin struct {
-	sync.RWMutex
+	rwm sync.RWMutex
 	// config for RR integration
 	cfgPlugin Configurer
 	// logger
@@ -70,11 +70,22 @@ func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
 		return nil, errors.E(op, err)
 	}
 
+	// should not be needed, but to double check
+	p.rwm.Lock()
+	defer p.rwm.Unlock()
+
 	p.metricsCollector = st.MetricsCollector()
 
 	return st, nil
 }
 
 func (p *Plugin) MetricsCollector() []prometheus.Collector {
+	p.rwm.RLock()
+	defer p.rwm.RUnlock()
+
+	if p.metricsCollector == nil {
+		return nil
+	}
+
 	return []prometheus.Collector{p.metricsCollector}
 }
