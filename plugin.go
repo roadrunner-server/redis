@@ -81,7 +81,7 @@ func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
 
 func (p *Plugin) MetricsCollector() []prometheus.Collector {
 	p.rwm.RLock()
-	defer p.rwm.Unlock()
+	defer p.rwm.RUnlock()
 
 	if p.metricsCollector == nil {
 		return nil
