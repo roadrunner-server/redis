@@ -9,12 +9,12 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.8.0
 	github.com/redis/go-redis/extra/redisprometheus/v9 v9.8.0
 	github.com/redis/go-redis/v9 v9.8.0
-	github.com/roadrunner-server/api/v4 v4.19.0
+	github.com/roadrunner-server/api/v4 v4.20.0
 	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/errors v1.4.1
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/sys v0.32.0
+	golang.org/x/sys v0.33.0
 )
 
 require (
