@@ -14,7 +14,7 @@ require (
 	github.com/roadrunner-server/metrics/v5 v5.1.8
 	github.com/roadrunner-server/redis/v5 v5.1.9
 	github.com/roadrunner-server/rpc/v5 v5.1.8
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	go.uber.org/zap v1.27.0
 )
 
