@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/extra/redisotel/v9 v9.14.0
 	github.com/redis/go-redis/extra/redisprometheus/v9 v9.14.0
-	github.com/redis/go-redis/v9 v9.15.0
+	github.com/redis/go-redis/v9 v9.14.0
 	github.com/roadrunner-server/api/v4 v4.22.1
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/errors v1.4.1
@@ -16,6 +16,8 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/sys v0.36.0
 )
+
+exclude github.com/redis/go-redis/v9 v9.15.0
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
