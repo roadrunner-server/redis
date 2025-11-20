@@ -41,8 +41,8 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.16.0 h1:+a9h9qxFXdf3gX0FXnDcz7X4
 github.com/redis/go-redis/extra/redisotel/v9 v9.16.0/go.mod h1:EtTTC7vnKWgznfG6kBgl9ySLqd7NckRCFUBzVXdeHeI=
 github.com/redis/go-redis/extra/redisprometheus/v9 v9.16.0 h1:75W2yK2OL7sfFz7GuKw+QS1wG51/Uy6/9GziE/uw91s=
 github.com/redis/go-redis/extra/redisprometheus/v9 v9.16.0/go.mod h1:e4ymSulPHMd0XZ+g2IelPc+zk97xgHQopjYj1nMO09I=
-github.com/redis/go-redis/v9 v9.16.0 h1:OotgqgLSRCmzfqChbQyG1PHC3tLNR89DG4jdOERSEP4=
-github.com/redis/go-redis/v9 v9.16.0/go.mod h1:u410H11HMLoB+TP67dz8rL9s6QW2j76l0//kSOd3370=
+github.com/redis/go-redis/v9 v9.17.0 h1:K6E+ZlYN95KSMmZeEQPbU/c++wfmEvfFB17yEAq/VhM=
+github.com/redis/go-redis/v9 v9.17.0/go.mod h1:u410H11HMLoB+TP67dz8rL9s6QW2j76l0//kSOd3370=
 github.com/roadrunner-server/api/v4 v4.22.1 h1:m+VkbRhRm8VwW+6cF2SsLlKou4IihEgwIOrZBjQe6KE=
 github.com/roadrunner-server/api/v4 v4.22.1/go.mod h1:nZM+QWvCYaP3o5ZYlwp6ie+9jbAYlxsnd7tbMxU777c=
 github.com/roadrunner-server/endure/v2 v2.6.2 h1:sIB4kTyE7gtT3fDhuYWUYn6Vt/dcPtiA6FoNS1eS+84=
