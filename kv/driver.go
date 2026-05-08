@@ -3,6 +3,7 @@ package kv
 import (
 	"context"
 	stderr "errors"
+	"log/slog"
 	"strings"
 	"time"
 	"unsafe"
@@ -13,7 +14,6 @@ import (
 	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/errors"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.uber.org/zap"
 )
 
 const (
@@ -30,12 +30,12 @@ type Configurer interface {
 type Driver struct {
 	universalClient  redis.UniversalClient
 	tracer           *sdktrace.TracerProvider
-	log              *zap.Logger
+	log              *slog.Logger
 	cfg              *Config
 	metricsCollector *redisprometheus.Collector
 }
 
-func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *sdktrace.TracerProvider) (*Driver, error) {
+func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *sdktrace.TracerProvider) (*Driver, error) {
 	const op = errors.Op("new_redis_driver")
 
 	d := &Driver{
@@ -86,12 +86,12 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 
 	err = redisotel.InstrumentMetrics(d.universalClient)
 	if err != nil {
-		d.log.Warn("failed to instrument redis metrics, driver will work without metrics", zap.Error(err))
+		d.log.Warn("failed to instrument redis metrics, driver will work without metrics", "error", err)
 	}
 
 	err = redisotel.InstrumentTracing(d.universalClient)
 	if err != nil {
-		d.log.Warn("failed to instrument redis tracing, driver will work without tracing", zap.Error(err))
+		d.log.Warn("failed to instrument redis tracing, driver will work without tracing", "error", err)
 	}
 
 	d.metricsCollector = redisprometheus.NewCollector("rr", "redis", d.universalClient)

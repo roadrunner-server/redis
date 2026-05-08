@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +12,6 @@ import (
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v6/kv"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.uber.org/zap"
 )
 
 const PluginName = "redis"
@@ -28,7 +28,7 @@ type Tracer interface {
 }
 
 type Logger interface {
-	NamedLogger(name string) *zap.Logger
+	NamedLogger(name string) *slog.Logger
 }
 
 type Plugin struct {
@@ -36,7 +36,7 @@ type Plugin struct {
 	// config for RR integration
 	cfgPlugin Configurer
 	// logger
-	log *zap.Logger
+	log *slog.Logger
 	// otel tracer
 	tracer *sdktrace.TracerProvider
 	// prometheus metrics
