@@ -1,14 +1,15 @@
 package redis
 
 import (
+	"context"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/extra/redisprometheus/v9"
-	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
+	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/endure/v2/dep"
 	"github.com/roadrunner-server/errors"
-	rkv "github.com/roadrunner-server/redis/v5/kv"
+	rkv "github.com/roadrunner-server/redis/v6/kv"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 )
@@ -63,7 +64,7 @@ func (p *Plugin) Collects() []*dep.In {
 }
 
 // KvFromConfig provides KV storage implementation over the redis plugin
-func (p *Plugin) KvFromConfig(key string) (kv.Storage, error) {
+func (p *Plugin) KvFromConfig(_ context.Context, key string) (kv.Storage, error) {
 	const op = errors.Op("redis_plugin_provide")
 	st, err := rkv.NewRedisDriver(p.log, key, p.cfgPlugin, p.tracer)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/extra/redisprometheus/v9"
 	"github.com/redis/go-redis/v9"
-	"github.com/roadrunner-server/api/v4/plugins/v1/kv"
+	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/errors"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
@@ -100,7 +100,7 @@ func NewRedisDriver(log *zap.Logger, key string, cfgPlugin Configurer, tracer *s
 }
 
 // Has checks if value exists.
-func (d *Driver) Has(keys ...string) (map[string]bool, error) {
+func (d *Driver) Has(_ context.Context, keys ...string) (map[string]bool, error) {
 	const op = errors.Op("redis_driver_has")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:has")
 	defer span.End()
@@ -131,7 +131,7 @@ func (d *Driver) Has(keys ...string) (map[string]bool, error) {
 }
 
 // Get loads key content into slice.
-func (d *Driver) Get(key string) ([]byte, error) {
+func (d *Driver) Get(_ context.Context, key string) ([]byte, error) {
 	const op = errors.Op("redis_driver_get")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:get")
 	defer span.End()
@@ -149,7 +149,7 @@ func (d *Driver) Get(key string) ([]byte, error) {
 // MGet loads content of multiple values (some values might be skipped).
 // https://redis.io/commands/mget
 // Returns slice with the interfaces with values
-func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
+func (d *Driver) MGet(_ context.Context, keys ...string) (map[string][]byte, error) {
 	const op = errors.Op("redis_driver_mget")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:mget")
 	defer span.End()
@@ -192,7 +192,7 @@ func (d *Driver) MGet(keys ...string) (map[string][]byte, error) {
 //
 // Use expiration for `SETEX`-like behavior.
 // Zero expiration means the key has no expiration time.
-func (d *Driver) Set(items ...kv.Item) error {
+func (d *Driver) Set(_ context.Context, items ...kv.Item) error {
 	const op = errors.Op("redis_driver_set")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:set")
 	defer span.End()
@@ -232,7 +232,7 @@ func (d *Driver) Set(items ...kv.Item) error {
 }
 
 // Delete one or multiple keys.
-func (d *Driver) Delete(keys ...string) error {
+func (d *Driver) Delete(_ context.Context, keys ...string) error {
 	const op = errors.Op("redis_driver_delete")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:delete")
 	defer span.End()
@@ -256,7 +256,7 @@ func (d *Driver) Delete(keys ...string) error {
 
 // MExpire https://redis.io/commands/expire
 // timeout in RFC3339
-func (d *Driver) MExpire(items ...kv.Item) error {
+func (d *Driver) MExpire(_ context.Context, items ...kv.Item) error {
 	const op = errors.Op("redis_driver_mexpire")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:mexpire")
 	defer span.End()
@@ -287,7 +287,7 @@ func (d *Driver) MExpire(items ...kv.Item) error {
 
 // TTL https://redis.io/commands/ttl
 // return time in seconds (float64) for a given keys
-func (d *Driver) TTL(keys ...string) (map[string]string, error) {
+func (d *Driver) TTL(_ context.Context, keys ...string) (map[string]string, error) {
 	const op = errors.Op("redis_driver_ttl")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:ttl")
 	defer span.End()
@@ -327,7 +327,7 @@ func (d *Driver) TTL(keys ...string) (map[string]string, error) {
 	return m, nil
 }
 
-func (d *Driver) Clear() error {
+func (d *Driver) Clear(_ context.Context) error {
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:clear")
 	defer span.End()
 
@@ -340,7 +340,7 @@ func (d *Driver) Clear() error {
 	return nil
 }
 
-func (d *Driver) Stop() {
+func (d *Driver) Stop(_ context.Context) {
 	// close the connection
 	_ = d.universalClient.Close()
 }
