@@ -38,6 +38,10 @@ type Driver struct {
 func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *sdktrace.TracerProvider) (*Driver, error) {
 	const op = errors.Op("new_redis_driver")
 
+	if tracer == nil {
+		tracer = sdktrace.NewTracerProvider()
+	}
+
 	d := &Driver{
 		log:    log,
 		tracer: tracer,
