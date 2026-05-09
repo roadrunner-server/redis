@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	kvProto "github.com/roadrunner-server/api/v4/build/kv/v1"
+	kvProto "github.com/roadrunner-server/api-go/v6/kv/v2"
 	"github.com/roadrunner-server/config/v6"
 	"github.com/roadrunner-server/endure/v2"
 	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
@@ -23,6 +23,7 @@ import (
 	"github.com/roadrunner-server/redis/v6"
 	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestRedis(t *testing.T) {
@@ -336,10 +337,10 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
 
 		// add 5 second ttl
-		tt := time.Now().Add(time.Second * 5).Format(time.RFC3339)
-		keys := &kvProto.Request{
+		tt := durationpb.New(time.Second * 5)
+		keys := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key: "a",
 				},
@@ -352,9 +353,9 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 			},
 		}
 
-		data := &kvProto.Request{
+		data := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key:   "a",
 					Value: []byte("aa"),
@@ -366,7 +367,7 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 				{
 					Key:     "c",
 					Value:   []byte("cc"),
-					Timeout: tt,
+					Ttl: tt,
 				},
 				{
 					Key:   "d",
@@ -379,12 +380,12 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 			},
 		}
 
-		ret := &kvProto.Response{}
+		ret := &kvProto.KvResponse{}
 		// Register 3 keys with values
 		err = client.Call("kv.Set", data, ret)
 		assert.NoError(t, err)
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", keys, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 3) // should be 3
@@ -392,45 +393,45 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 		// key "c" should be deleted
 		time.Sleep(time.Second * 7)
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", keys, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 2) // should be 2
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.MGet", keys, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 2) // c is expired
 
-		tt2 := time.Now().Add(time.Second * 10).Format(time.RFC3339)
+		tt2 := durationpb.New(time.Second * 10)
 
-		data2 := &kvProto.Request{
+		data2 := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key:     "a",
-					Timeout: tt2,
+					Ttl: tt2,
 				},
 				{
 					Key:     "b",
-					Timeout: tt2,
+					Ttl: tt2,
 				},
 				{
 					Key:     "d",
-					Timeout: tt2,
+					Ttl: tt2,
 				},
 			},
 		}
 
 		// MEXPIRE
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.MExpire", data2, ret)
 		assert.NoError(t, err)
 
 		// TTL
-		keys2 := &kvProto.Request{
+		keys2 := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key: "a",
 				},
@@ -443,46 +444,46 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 			},
 		}
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.TTL", keys2, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 3)
 
 		// HAS AFTER TTL
 		time.Sleep(time.Second * 15)
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", keys2, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 0)
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.TTL", keys2, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 0)
 
 		// DELETE
-		keysDel := &kvProto.Request{
+		keysDel := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key: "e",
 				},
 			},
 		}
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Delete", keysDel, ret)
 		assert.NoError(t, err)
 
 		// HAS AFTER DELETE
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", keysDel, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 0)
 
-		dataClear := &kvProto.Request{
+		dataClear := &kvProto.KvRequest{
 			Storage: "redis-rr",
-			Items: []*kvProto.Item{
+			Items: []*kvProto.KvItem{
 				{
 					Key:   "a",
 					Value: []byte("aa"),
@@ -506,23 +507,23 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 			},
 		}
 
-		clr := &kvProto.Request{Storage: "redis-rr"}
+		clr := &kvProto.KvRequest{Storage: "redis-rr"}
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		// Register 3 keys with values
 		err = client.Call("kv.Set", dataClear, ret)
 		assert.NoError(t, err)
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", dataClear, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 5) // should be 5
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Clear", clr, ret)
 		assert.NoError(t, err)
 
-		ret = &kvProto.Response{}
+		ret = &kvProto.KvResponse{}
 		err = client.Call("kv.Has", dataClear, ret)
 		assert.NoError(t, err)
 		assert.Len(t, ret.GetItems(), 0) // should be 5
