@@ -2,7 +2,7 @@ module github.com/roadrunner-server/redis/v6
 
 go 1.26
 
-toolchain go1.26.0
+toolchain go1.26.3
 
 require (
 	github.com/prometheus/client_golang v1.23.2
@@ -13,7 +13,7 @@ require (
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/errors v1.5.0
 	go.opentelemetry.io/otel/sdk v1.43.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.45.0
 )
 
 exclude github.com/redis/go-redis/v9 v9.15.0
