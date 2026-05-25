@@ -1,11 +1,12 @@
 package kv
 
 import (
+	"context"
+	"crypto/tls"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
-	"net/rpc"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,18 +14,32 @@ import (
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
 	kvProto "github.com/roadrunner-server/api-go/v6/kv/v2"
+	"github.com/roadrunner-server/api-go/v6/kv/v2/kvV2connect"
 	"github.com/roadrunner-server/config/v6"
 	"github.com/roadrunner-server/endure/v2"
-	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
 	"github.com/roadrunner-server/kv/v6"
 	"github.com/roadrunner-server/logger/v6"
 	"github.com/roadrunner-server/metrics/v6"
 	"github.com/roadrunner-server/redis/v6"
 	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
+
+func newKVClient(t *testing.T, address string) kvV2connect.KvServiceClient {
+	t.Helper()
+	httpc := &http.Client{Transport: &http2.Transport{
+		AllowHTTP: true,
+		DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+			return new(net.Dialer).DialContext(ctx, network, addr)
+		},
+	}}
+	t.Cleanup(httpc.CloseIdleConnections)
+	return kvV2connect.NewKvServiceClient(httpc, "http://"+address)
+}
 
 func TestRedis(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
@@ -55,12 +70,10 @@ func TestRedis(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -84,7 +97,7 @@ func TestRedis(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 1)
 	t.Run("REDIS", testRPCMethodsRedis("127.0.0.1:6001"))
@@ -121,12 +134,10 @@ func TestRedisGlobalSection(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -150,7 +161,7 @@ func TestRedisGlobalSection(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 1)
 	t.Run("REDIS", testRPCMethodsRedis("127.0.0.1:6001"))
@@ -214,12 +225,10 @@ func TestRedisTLS(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -243,7 +252,7 @@ func TestRedisTLS(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 1)
 	t.Run("REDIS-TLS", testRPCMethodsRedis("127.0.0.1:6002"))
@@ -281,12 +290,10 @@ func TestRedisMetrics(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -310,7 +317,7 @@ func TestRedisMetrics(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 1)
 	t.Run("REDIS", testRPCMethodsRedis("127.0.0.1:6001"))
@@ -332,201 +339,123 @@ func TestRedisMetrics(t *testing.T) {
 
 func testRPCMethodsRedis(addr string) func(t *testing.T) {
 	return func(t *testing.T) {
-		conn, err := net.Dial("tcp", addr)
-		assert.NoError(t, err)
-		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
+		const storage = "redis-rr"
 
-		// add 5 second ttl
+		client := newKVClient(t, addr)
+		ctx := t.Context()
+
 		tt := durationpb.New(time.Second * 5)
 		keys := &kvProto.KvRequest{
-			Storage: "redis-rr",
+			Storage: storage,
 			Items: []*kvProto.KvItem{
-				{
-					Key: "a",
-				},
-				{
-					Key: "b",
-				},
-				{
-					Key: "c",
-				},
+				{Key: "a"},
+				{Key: "b"},
+				{Key: "c"},
 			},
 		}
 
 		data := &kvProto.KvRequest{
-			Storage: "redis-rr",
+			Storage: storage,
 			Items: []*kvProto.KvItem{
-				{
-					Key:   "a",
-					Value: []byte("aa"),
-				},
-				{
-					Key:   "b",
-					Value: []byte("bb"),
-				},
-				{
-					Key:     "c",
-					Value:   []byte("cc"),
-					Ttl: tt,
-				},
-				{
-					Key:   "d",
-					Value: []byte("dd"),
-				},
-				{
-					Key:   "e",
-					Value: []byte("ee"),
-				},
+				{Key: "a", Value: []byte("aa")},
+				{Key: "b", Value: []byte("bb")},
+				{Key: "c", Value: []byte("cc"), Ttl: tt},
+				{Key: "d", Value: []byte("dd")},
+				{Key: "e", Value: []byte("ee")},
 			},
 		}
 
-		ret := &kvProto.KvResponse{}
-		// Register 3 keys with values
-		err = client.Call("kv.Set", data, ret)
+		_, err := client.Set(ctx, connect.NewRequest(data))
 		assert.NoError(t, err)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", keys, ret)
+		resp, err := client.Has(ctx, connect.NewRequest(keys))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 3) // should be 3
+		assert.Len(t, resp.Msg.GetItems(), 3)
 
 		// key "c" should be deleted
 		time.Sleep(time.Second * 7)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", keys, ret)
+		resp, err = client.Has(ctx, connect.NewRequest(keys))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 2) // should be 2
+		assert.Len(t, resp.Msg.GetItems(), 2)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.MGet", keys, ret)
+		resp, err = client.MGet(ctx, connect.NewRequest(keys))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 2) // c is expired
+		assert.Len(t, resp.Msg.GetItems(), 2) // c is expired
 
 		tt2 := durationpb.New(time.Second * 10)
 
 		data2 := &kvProto.KvRequest{
-			Storage: "redis-rr",
+			Storage: storage,
 			Items: []*kvProto.KvItem{
-				{
-					Key:     "a",
-					Ttl: tt2,
-				},
-				{
-					Key:     "b",
-					Ttl: tt2,
-				},
-				{
-					Key:     "d",
-					Ttl: tt2,
-				},
+				{Key: "a", Ttl: tt2},
+				{Key: "b", Ttl: tt2},
+				{Key: "d", Ttl: tt2},
 			},
 		}
 
-		// MEXPIRE
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.MExpire", data2, ret)
+		_, err = client.MExpire(ctx, connect.NewRequest(data2))
 		assert.NoError(t, err)
 
-		// TTL
 		keys2 := &kvProto.KvRequest{
-			Storage: "redis-rr",
+			Storage: storage,
 			Items: []*kvProto.KvItem{
-				{
-					Key: "a",
-				},
-				{
-					Key: "b",
-				},
-				{
-					Key: "d",
-				},
+				{Key: "a"},
+				{Key: "b"},
+				{Key: "d"},
 			},
 		}
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.TTL", keys2, ret)
+		resp, err = client.TTL(ctx, connect.NewRequest(keys2))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 3)
+		assert.Len(t, resp.Msg.GetItems(), 3)
 
 		// HAS AFTER TTL
 		time.Sleep(time.Second * 15)
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", keys2, ret)
+		resp, err = client.Has(ctx, connect.NewRequest(keys2))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 0)
+		assert.Empty(t, resp.Msg.GetItems())
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.TTL", keys2, ret)
+		resp, err = client.TTL(ctx, connect.NewRequest(keys2))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 0)
+		assert.Empty(t, resp.Msg.GetItems())
 
-		// DELETE
 		keysDel := &kvProto.KvRequest{
-			Storage: "redis-rr",
-			Items: []*kvProto.KvItem{
-				{
-					Key: "e",
-				},
-			},
+			Storage: storage,
+			Items:   []*kvProto.KvItem{{Key: "e"}},
 		}
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Delete", keysDel, ret)
+		_, err = client.Delete(ctx, connect.NewRequest(keysDel))
 		assert.NoError(t, err)
 
-		// HAS AFTER DELETE
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", keysDel, ret)
+		resp, err = client.Has(ctx, connect.NewRequest(keysDel))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 0)
+		assert.Empty(t, resp.Msg.GetItems())
 
 		dataClear := &kvProto.KvRequest{
-			Storage: "redis-rr",
+			Storage: storage,
 			Items: []*kvProto.KvItem{
-				{
-					Key:   "a",
-					Value: []byte("aa"),
-				},
-				{
-					Key:   "b",
-					Value: []byte("bb"),
-				},
-				{
-					Key:   "c",
-					Value: []byte("cc"),
-				},
-				{
-					Key:   "d",
-					Value: []byte("dd"),
-				},
-				{
-					Key:   "e",
-					Value: []byte("ee"),
-				},
+				{Key: "a", Value: []byte("aa")},
+				{Key: "b", Value: []byte("bb")},
+				{Key: "c", Value: []byte("cc")},
+				{Key: "d", Value: []byte("dd")},
+				{Key: "e", Value: []byte("ee")},
 			},
 		}
 
-		clr := &kvProto.KvRequest{Storage: "redis-rr"}
-
-		ret = &kvProto.KvResponse{}
-		// Register 3 keys with values
-		err = client.Call("kv.Set", dataClear, ret)
+		_, err = client.Set(ctx, connect.NewRequest(dataClear))
 		assert.NoError(t, err)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", dataClear, ret)
+		resp, err = client.Has(ctx, connect.NewRequest(dataClear))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 5) // should be 5
+		assert.Len(t, resp.Msg.GetItems(), 5)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Clear", clr, ret)
+		_, err = client.Clear(ctx, connect.NewRequest(&kvProto.KvRequest{Storage: storage}))
 		assert.NoError(t, err)
 
-		ret = &kvProto.KvResponse{}
-		err = client.Call("kv.Has", dataClear, ret)
+		resp, err = client.Has(ctx, connect.NewRequest(dataClear))
 		assert.NoError(t, err)
-		assert.Len(t, ret.GetItems(), 0) // should be 5
+		assert.Empty(t, resp.Msg.GetItems())
 	}
 }
 

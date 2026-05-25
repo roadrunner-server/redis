@@ -13,7 +13,7 @@ require (
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/errors v1.5.0
 	go.opentelemetry.io/otel/sdk v1.43.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.45.0
 )
 
 exclude github.com/redis/go-redis/v9 v9.15.0
