@@ -460,7 +460,12 @@ func testRPCMethodsRedis(addr string) func(t *testing.T) {
 }
 
 func get(address string) (string, error) {
-	r, err := http.Get(address) //nolint:gosec
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, address, nil)
+	if err != nil {
+		return "", err
+	}
+
+	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -470,10 +475,8 @@ func get(address string) (string, error) {
 		return "", err
 	}
 
-	err = r.Body.Close()
-	if err != nil {
+	if err := r.Body.Close(); err != nil {
 		return "", err
 	}
-	// unsafe
-	return string(b), err
+	return string(b), nil
 }
