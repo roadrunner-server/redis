@@ -11,7 +11,7 @@ require (
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/kv/v6 v6.0.0-beta.5
 	github.com/roadrunner-server/logger/v6 v6.0.0-beta.3
-	github.com/roadrunner-server/metrics/v6 v6.0.0-beta.3
+	github.com/roadrunner-server/metrics/v6 v6.0.0-beta.4
 	github.com/roadrunner-server/redis/v6 v6.0.0
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.4
 	github.com/stretchr/testify v1.11.1
@@ -67,7 +67,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260523011958-0a33c5d7ca68 // indirect
 	google.golang.org/grpc v1.81.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
