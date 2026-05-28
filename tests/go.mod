@@ -42,10 +42,10 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	github.com/redis/go-redis/extra/rediscmd/v9 v9.19.0 // indirect
-	github.com/redis/go-redis/extra/redisotel/v9 v9.19.0 // indirect
+	github.com/redis/go-redis/extra/rediscmd/v9 v9.20.0 // indirect
+	github.com/redis/go-redis/extra/redisotel/v9 v9.20.0 // indirect
 	github.com/redis/go-redis/extra/redisprometheus/v9 v9.19.0 // indirect
-	github.com/redis/go-redis/v9 v9.19.0 // indirect
+	github.com/redis/go-redis/v9 v9.20.0 // indirect
 	github.com/roadrunner-server/api-plugins/v6 v6.0.0-beta.2 // indirect
 	github.com/roadrunner-server/errors v1.5.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.5.2 // indirect
