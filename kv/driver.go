@@ -71,7 +71,7 @@ func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *
 		Password:         d.cfg.Password,
 		SentinelPassword: d.cfg.SentinelPassword,
 		MaxRetries:       d.cfg.MaxRetries,
-		MinRetryBackoff:  d.cfg.MaxRetryBackoff,
+		MinRetryBackoff:  d.cfg.MinRetryBackoff,
 		MaxRetryBackoff:  d.cfg.MaxRetryBackoff,
 		DialTimeout:      d.cfg.DialTimeout,
 		ReadTimeout:      d.cfg.ReadTimeout,
@@ -109,7 +109,7 @@ func (d *Driver) Has(_ context.Context, keys ...string) (map[string]bool, error)
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:has")
 	defer span.End()
 
-	if keys == nil {
+	if len(keys) == 0 {
 		span.RecordError(errors.E(op, errors.Str("no keys")))
 		return nil, errors.E(op, errors.NoKeys)
 	}
@@ -157,7 +157,7 @@ func (d *Driver) MGet(_ context.Context, keys ...string) (map[string][]byte, err
 	const op = errors.Op("redis_driver_mget")
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:mget")
 	defer span.End()
-	if keys == nil {
+	if len(keys) == 0 {
 		span.RecordError(errors.E(op, errors.NoKeys))
 		return nil, errors.E(op, errors.NoKeys)
 	}
@@ -201,7 +201,7 @@ func (d *Driver) Set(_ context.Context, items ...kv.Item) error {
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:set")
 	defer span.End()
 
-	if items == nil {
+	if len(items) == 0 {
 		span.RecordError(errors.E(op, errors.NoKeys))
 		return errors.E(op, errors.NoKeys)
 	}
@@ -241,7 +241,7 @@ func (d *Driver) Delete(_ context.Context, keys ...string) error {
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:delete")
 	defer span.End()
 
-	if keys == nil {
+	if len(keys) == 0 {
 		span.RecordError(errors.E(op, errors.NoKeys))
 		return errors.E(op, errors.NoKeys)
 	}
@@ -283,7 +283,10 @@ func (d *Driver) MExpire(_ context.Context, items ...kv.Item) error {
 
 		// t guessed to be in future
 		// for Redis we use t.Sub, it will result in seconds, like 4.2s
-		d.universalClient.Expire(ctx, item.Key(), t.Sub(now))
+		if err = d.universalClient.Expire(ctx, item.Key(), t.Sub(now)).Err(); err != nil {
+			span.RecordError(err)
+			return err
+		}
 	}
 
 	return nil
@@ -296,7 +299,7 @@ func (d *Driver) TTL(_ context.Context, keys ...string) (map[string]string, erro
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:ttl")
 	defer span.End()
 
-	if keys == nil {
+	if len(keys) == 0 {
 		span.RecordError(errors.E(op, errors.NoKeys))
 		return nil, errors.E(op, errors.NoKeys)
 	}
@@ -335,10 +338,9 @@ func (d *Driver) Clear(_ context.Context) error {
 	ctx, span := d.tracer.Tracer(tracerName).Start(context.Background(), "redis:clear")
 	defer span.End()
 
-	fdb := d.universalClient.FlushDB(ctx)
-	if fdb.Err() != nil {
-		span.RecordError(fdb.Err())
-		return fdb.Err()
+	if err := d.universalClient.FlushDB(ctx).Err(); err != nil {
+		span.RecordError(err)
+		return err
 	}
 
 	return nil
