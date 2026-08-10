@@ -15,7 +15,7 @@ require (
 	github.com/roadrunner-server/redis/v6 v6.0.0
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.5
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 replace github.com/roadrunner-server/redis/v6 => ../
