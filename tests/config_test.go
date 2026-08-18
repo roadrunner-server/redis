@@ -7,7 +7,7 @@ import (
 
 	"tests/helpers"
 
-	kvProto "github.com/roadrunner-server/api-go/v6/kv/v2"
+	kvProto "github.com/roadrunner-server/api-go/v6/kv/v1"
 	"github.com/roadrunner-server/kv/v6"
 	"github.com/roadrunner-server/metrics/v6"
 	"github.com/roadrunner-server/redis/v6"
@@ -21,7 +21,7 @@ import (
 func TestGlobalSectionSuppliesAddrs(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis-global.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa"}), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa"}), &kvProto.Response{}))
 	require.Equal(t, 1, has(t, client, "a"))
 }
 
@@ -45,7 +45,7 @@ func TestMetricsAreExported(t *testing.T) {
 
 	// touch the storage so the pool has stats worth reporting
 	client := helpers.NewRPCClient(t, rpcAddr)
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa"}), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa"}), &kvProto.Response{}))
 
 	body := scrape(t, "http://127.0.0.1:2112/metrics")
 

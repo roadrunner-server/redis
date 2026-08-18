@@ -63,8 +63,8 @@ github.com/redis/go-redis/extra/redisprometheus/v9 v9.22.0 h1:jmk+No4xN5dtzSsB1P
 github.com/redis/go-redis/extra/redisprometheus/v9 v9.22.0/go.mod h1:mjtJ1m5XQz30PCx3wa3Tbda7EArYzdA1LsFe3g7ghB4=
 github.com/redis/go-redis/v9 v9.22.0 h1:laDvpYXTJtZLloinw1fA5Kqd6HAEH2XKxOkG/PDq2F0=
 github.com/redis/go-redis/v9 v9.22.0/go.mod h1:y2g0Wj8rQvuK0ELM+oxSudcLtC09JScs98I/X9gRWY4=
-github.com/roadrunner-server/api-go/v6 v6.0.0-beta.13 h1:BAV1aKkRp51C1OXDfEYZXgfrXqn4O7bpr6Z/m5otwd8=
-github.com/roadrunner-server/api-go/v6 v6.0.0-beta.13/go.mod h1:Y4rsabWjr4Y10Jg6H8J5NDitQqlnXmGhCdgR+zyLYkI=
+github.com/roadrunner-server/api-go/v6 v6.0.0-beta.14 h1:sTskv/3ImOZlUdtHuj9uT24gm1gQl/qU8rFNvn3MzhU=
+github.com/roadrunner-server/api-go/v6 v6.0.0-beta.14/go.mod h1:Y4rsabWjr4Y10Jg6H8J5NDitQqlnXmGhCdgR+zyLYkI=
 github.com/roadrunner-server/api-plugins/v6 v6.0.0-beta.2 h1:GqsZzWQ5jMXRF1O/b8IqFz9PLpS7Ui0K4OyACLql2MI=
 github.com/roadrunner-server/api-plugins/v6 v6.0.0-beta.2/go.mod h1:2v4yUK5Kvbvq8C3IkDoBkuamq9h+7i/JLjyf7k1j5JM=
 github.com/roadrunner-server/config/v6 v6.0.0-beta.3 h1:G0EUzJ6Yw4UnleM6BhnOBbYPXKDHRmCJiGhC3nXDBwI=
@@ -75,12 +75,12 @@ github.com/roadrunner-server/errors v1.5.0 h1:unG7LKIZrSzkCCF3YLRLA5VyqE0KKomofX
 github.com/roadrunner-server/errors v1.5.0/go.mod h1:g9fo/T2C13cWRDR9PW1r0ZAOSQfNhWAZawyfkGiaHuI=
 github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3 h1:+kUw00/fpqwdMWrPMYW+OZH3O4gEar8hqrY7I+nAztA=
 github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3/go.mod h1:1aHppV68y/VqRED/AsfNg59sft9aQOhqgr5Z5n49jbM=
-github.com/roadrunner-server/kv/v6 v6.0.0-beta.6 h1:qU6j1xXzJeuOyrd9DyNIApYA5D4HvFAQfxhgDR13hO8=
-github.com/roadrunner-server/kv/v6 v6.0.0-beta.6/go.mod h1:o1TLqxL7Scg8El+ysXDCpN2KQztEFMOButxWI+zgY5c=
+github.com/roadrunner-server/kv/v6 v6.0.0-beta.7 h1:vIFyrCgkjSArpq5itfogHrPCJltmDoavIeLX6Y069Q0=
+github.com/roadrunner-server/kv/v6 v6.0.0-beta.7/go.mod h1:zKXssJqwU2JT+z3R/xYQNZ3VslsnYbUaYhfayaZD2Mk=
 github.com/roadrunner-server/logger/v6 v6.0.0-beta.3 h1:eoJKXAUSyykDfVX6eTUhmAn6Y8pS/LyI5fDP4H+G5rQ=
 github.com/roadrunner-server/logger/v6 v6.0.0-beta.3/go.mod h1:MwHb3AbltHYtu7nRpml5NeYu7O+W8rCpDBeNTTEoE1M=
-github.com/roadrunner-server/metrics/v6 v6.0.0-beta.5 h1:JaJGPwjVKDUJi0Ey3ztkjhod1EYHbmf8gmdPoYWCWbo=
-github.com/roadrunner-server/metrics/v6 v6.0.0-beta.5/go.mod h1:VAY+k1uFqySbt9E9RaGQXXN+Pn0D2cuJEpO0i66Ny2M=
+github.com/roadrunner-server/metrics/v6 v6.0.0-beta.6 h1:rr5joyN+uHmxP3096UD+om254hPnC76FH4q7XkGfhHE=
+github.com/roadrunner-server/metrics/v6 v6.0.0-beta.6/go.mod h1:sKXXkrSklam6/sbUvnHoCkzXjnoFcdVKe49MZprtHcc=
 github.com/roadrunner-server/rpc/v6 v6.0.0-beta.5 h1:FjwXfznbmyCEKFUHkxnvK8yo1HQKAQk+7fiPhSYC27E=
 github.com/roadrunner-server/rpc/v6 v6.0.0-beta.5/go.mod h1:z387hZZOEJ3+bB8iW1PEAEXF3jUUb/dDLDnVSc1CNNQ=
 github.com/roadrunner-server/tcplisten v1.5.2 h1:nn8yXYrhRDkfQ9AAu4V075uT4fZRmOnpxkawgE+bWPA=

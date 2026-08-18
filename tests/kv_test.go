@@ -7,12 +7,11 @@ import (
 
 	"tests/helpers"
 
-	kvProto "github.com/roadrunner-server/api-go/v6/kv/v2"
+	kvProto "github.com/roadrunner-server/api-go/v6/kv/v1"
 	"github.com/roadrunner-server/kv/v6"
 	"github.com/roadrunner-server/redis/v6"
 	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 const (
@@ -38,23 +37,23 @@ func bootKV(t *testing.T, cfgPath, addr string) *rpc.Client {
 	helpers.Start(t, cfgPath, redisPlugins(), helpers.WithTCPProbe(addr))
 
 	client := helpers.NewRPCClient(t, addr)
-	require.NoError(t, client.Call("kv.Clear", &kvProto.KvRequest{Storage: storage}, &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Clear", &kvProto.Request{Storage: storage}, &kvProto.Response{}))
 
 	return client
 }
 
-func items(pairs map[string]string) *kvProto.KvRequest {
-	req := &kvProto.KvRequest{Storage: storage}
+func items(pairs map[string]string) *kvProto.Request {
+	req := &kvProto.Request{Storage: storage}
 	for k, v := range pairs {
-		req.Items = append(req.Items, &kvProto.KvItem{Key: k, Value: []byte(v)})
+		req.Items = append(req.Items, &kvProto.Item{Key: k, Value: []byte(v)})
 	}
 	return req
 }
 
-func keys(names ...string) *kvProto.KvRequest {
-	req := &kvProto.KvRequest{Storage: storage}
+func keys(names ...string) *kvProto.Request {
+	req := &kvProto.Request{Storage: storage}
 	for _, n := range names {
-		req.Items = append(req.Items, &kvProto.KvItem{Key: n})
+		req.Items = append(req.Items, &kvProto.Item{Key: n})
 	}
 	return req
 }
@@ -63,7 +62,7 @@ func keys(names ...string) *kvProto.KvRequest {
 func has(t *testing.T, client *rpc.Client, names ...string) int {
 	t.Helper()
 
-	resp := &kvProto.KvResponse{}
+	resp := &kvProto.Response{}
 	require.NoError(t, client.Call("kv.Has", keys(names...), resp))
 
 	return len(resp.GetItems())
@@ -72,7 +71,7 @@ func has(t *testing.T, client *rpc.Client, names ...string) int {
 func TestSetAndHas(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.Response{}))
 
 	require.Equal(t, 2, has(t, client, "a", "b"))
 	require.Equal(t, 0, has(t, client, "missing"))
@@ -81,9 +80,9 @@ func TestSetAndHas(t *testing.T) {
 func TestMGetReturnsStoredValues(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.Response{}))
 
-	resp := &kvProto.KvResponse{}
+	resp := &kvProto.Response{}
 	require.NoError(t, client.Call("kv.MGet", keys("a", "b", "absent"), resp))
 
 	got := make(map[string]string, len(resp.GetItems()))
@@ -97,8 +96,8 @@ func TestMGetReturnsStoredValues(t *testing.T) {
 func TestDeleteRemovesOnlyTheNamedKey(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.KvResponse{}))
-	require.NoError(t, client.Call("kv.Delete", keys("a"), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.Response{}))
+	require.NoError(t, client.Call("kv.Delete", keys("a"), &kvProto.Response{}))
 
 	require.Equal(t, 0, has(t, client, "a"))
 	require.Equal(t, 1, has(t, client, "b"))
@@ -107,8 +106,8 @@ func TestDeleteRemovesOnlyTheNamedKey(t *testing.T) {
 func TestClearEmptiesTheStorage(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.KvResponse{}))
-	require.NoError(t, client.Call("kv.Clear", &kvProto.KvRequest{Storage: storage}, &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.Response{}))
+	require.NoError(t, client.Call("kv.Clear", &kvProto.Request{Storage: storage}, &kvProto.Response{}))
 
 	require.Equal(t, 0, has(t, client, "a", "b"))
 }
@@ -119,22 +118,24 @@ func TestClearEmptiesTheStorage(t *testing.T) {
 func TestTTLReportsRemainingLifetime(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	req := &kvProto.KvRequest{
+	req := &kvProto.Request{
 		Storage: storage,
-		Items: []*kvProto.KvItem{
+		Items: []*kvProto.Item{
 			{Key: "permanent", Value: []byte("v")},
-			{Key: "ephemeral", Value: []byte("v"), Ttl: durationpb.New(time.Minute)},
+			{Key: "ephemeral", Value: []byte("v"), Timeout: time.Now().UTC().Add(time.Minute).Format(time.RFC3339)},
 		},
 	}
-	require.NoError(t, client.Call("kv.Set", req, &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", req, &kvProto.Response{}))
 
-	resp := &kvProto.KvResponse{}
+	resp := &kvProto.Response{}
 	require.NoError(t, client.Call("kv.TTL", keys("permanent", "ephemeral"), resp))
 
 	// the driver skips keys with no expiry, so only the ephemeral one comes back
 	require.Len(t, resp.GetItems(), 1)
 	require.Equal(t, "ephemeral", resp.GetItems()[0].GetKey())
-	require.Positive(t, resp.GetItems()[0].GetTtl().AsDuration(), "a key with a TTL must report a remaining lifetime")
+	expiry, err := time.Parse(time.RFC3339, resp.GetItems()[0].GetTimeout())
+	require.NoError(t, err)
+	require.True(t, expiry.After(time.Now()), "a key with a TTL must report a future expiry")
 }
 
 // TestKeyExpiresAfterTTL polls for the expiry rather than sleeping out the
@@ -142,14 +143,14 @@ func TestTTLReportsRemainingLifetime(t *testing.T) {
 func TestKeyExpiresAfterTTL(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	req := &kvProto.KvRequest{
+	req := &kvProto.Request{
 		Storage: storage,
-		Items: []*kvProto.KvItem{
+		Items: []*kvProto.Item{
 			{Key: "permanent", Value: []byte("v")},
-			{Key: "ephemeral", Value: []byte("v"), Ttl: durationpb.New(shortTTL)},
+			{Key: "ephemeral", Value: []byte("v"), Timeout: time.Now().UTC().Add(shortTTL).Format(time.RFC3339)},
 		},
 	}
-	require.NoError(t, client.Call("kv.Set", req, &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", req, &kvProto.Response{}))
 	require.Equal(t, 2, has(t, client, "permanent", "ephemeral"))
 
 	require.Eventually(t, func() bool {
@@ -162,16 +163,16 @@ func TestKeyExpiresAfterTTL(t *testing.T) {
 func TestMExpireAppliesTTLToExistingKeys(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.Set", items(map[string]string{"a": "aa", "b": "bb"}), &kvProto.Response{}))
 
-	expire := &kvProto.KvRequest{
+	expire := &kvProto.Request{
 		Storage: storage,
-		Items: []*kvProto.KvItem{
-			{Key: "a", Ttl: durationpb.New(shortTTL)},
-			{Key: "b", Ttl: durationpb.New(shortTTL)},
+		Items: []*kvProto.Item{
+			{Key: "a", Timeout: time.Now().UTC().Add(shortTTL).Format(time.RFC3339)},
+			{Key: "b", Timeout: time.Now().UTC().Add(shortTTL).Format(time.RFC3339)},
 		},
 	}
-	require.NoError(t, client.Call("kv.MExpire", expire, &kvProto.KvResponse{}))
+	require.NoError(t, client.Call("kv.MExpire", expire, &kvProto.Response{}))
 
 	require.Eventually(t, func() bool {
 		return has(t, client, "a", "b") == 0
@@ -181,10 +182,10 @@ func TestMExpireAppliesTTLToExistingKeys(t *testing.T) {
 func TestUnknownStorageIsRejected(t *testing.T) {
 	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
 
-	err := client.Call("kv.Has", &kvProto.KvRequest{
+	err := client.Call("kv.Has", &kvProto.Request{
 		Storage: "not-configured",
-		Items:   []*kvProto.KvItem{{Key: "a"}},
-	}, &kvProto.KvResponse{})
+		Items:   []*kvProto.Item{{Key: "a"}},
+	}, &kvProto.Response{})
 
 	require.Error(t, err)
 }
