@@ -9,7 +9,7 @@ require (
 	github.com/roadrunner-server/config/v6 v6.0.0-beta.3
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3
-	github.com/roadrunner-server/kv/v6 v6.0.0-beta.7
+	github.com/roadrunner-server/kv/v6 v6.0.0-beta.8
 	github.com/roadrunner-server/logger/v6 v6.0.0-beta.3
 	github.com/roadrunner-server/metrics/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/redis/v6 v6.0.0
