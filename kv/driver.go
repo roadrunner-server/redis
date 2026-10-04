@@ -69,6 +69,7 @@ func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *
 		DB:               d.cfg.DB,
 		Username:         d.cfg.Username,
 		Password:         d.cfg.Password,
+		SentinelUsername: d.cfg.SentinelUsername,
 		SentinelPassword: d.cfg.SentinelPassword,
 		MaxRetries:       d.cfg.MaxRetries,
 		MinRetryBackoff:  d.cfg.MinRetryBackoff,

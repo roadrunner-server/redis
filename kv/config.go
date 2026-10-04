@@ -10,6 +10,7 @@ type Config struct {
 	Username         string        `mapstructure:"username"`
 	Password         string        `mapstructure:"password"`
 	MasterName       string        `mapstructure:"master_name"`
+	SentinelUsername string        `mapstructure:"sentinel_username"`
 	SentinelPassword string        `mapstructure:"sentinel_password"`
 	RouteByLatency   bool          `mapstructure:"route_by_latency"`
 	RouteRandomly    bool          `mapstructure:"route_randomly"`
