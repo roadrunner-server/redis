@@ -5,6 +5,7 @@ go 1.27
 toolchain go1.27.1
 
 require (
+	github.com/redis/go-redis/v9 v9.22.0
 	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.15
 	github.com/roadrunner-server/config/v6 v6.0.0-beta.4
 	github.com/roadrunner-server/endure/v2 v2.6.2
@@ -40,7 +41,6 @@ require (
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/extra/redisprometheus/v9 v9.22.0 // indirect
-	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/roadrunner-server/api-plugins/v6 v6.0.0-beta.2 // indirect
 	github.com/roadrunner-server/errors v1.5.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.6.0 // indirect
