@@ -46,6 +46,14 @@
       "default": 0,
       "maximum": 10
     },
+    "sentinel_username": {
+      "title": "Sentinel Username",
+      "description": "The username for Redis Sentinel authentication, independent of the Redis server username.",
+      "type": "string",
+      "examples": [
+        "sentinel_user"
+      ]
+    },
     "sentinel_password": {
       "title": "Sentinel Password",
       "description": "The password for Redis Sentinel.",
