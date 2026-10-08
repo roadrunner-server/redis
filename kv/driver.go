@@ -213,23 +213,18 @@ func (d *Driver) Set(_ context.Context, items ...kv.Item) error {
 			return errors.E(op, errors.EmptyKey)
 		}
 
-		if item.Timeout() == "" {
-			err := d.universalClient.Set(ctx, item.Key(), item.Value(), 0).Err()
-			if err != nil {
-				span.RecordError(err)
-				return err
-			}
-		} else {
+		var expiration time.Duration
+		if item.Timeout() != "" {
 			t, err := time.Parse(time.RFC3339, item.Timeout())
 			if err != nil {
 				span.RecordError(err)
 				return err
 			}
-			err = d.universalClient.Set(ctx, item.Key(), item.Value(), t.Sub(now)).Err()
-			if err != nil {
-				span.RecordError(err)
-				return err
-			}
+			expiration = t.Sub(now)
+		}
+		if err := d.universalClient.Set(ctx, item.Key(), item.Value(), expiration).Err(); err != nil {
+			span.RecordError(err)
+			return err
 		}
 	}
 

@@ -1,12 +1,14 @@
 package kv
 
 import (
+	"context"
 	"net/rpc"
 	"testing"
 	"time"
 
 	"tests/helpers"
 
+	goredis "github.com/redis/go-redis/v9"
 	kvProto "github.com/roadrunner-server/api-go/v6/kv/v1"
 	"github.com/roadrunner-server/kv/v6"
 	"github.com/roadrunner-server/redis/v6"
@@ -75,6 +77,39 @@ func TestSetAndHas(t *testing.T) {
 
 	require.Equal(t, 2, has(t, client, "a", "b"))
 	require.Equal(t, 0, has(t, client, "missing"))
+}
+
+func TestSetReturnsPermissionError(t *testing.T) {
+	client := bootKV(t, "configs/.rr-redis.yaml", rpcAddr)
+	admin := goredis.NewClient(&goredis.Options{Addr: "127.0.0.1:16379"})
+	t.Cleanup(func() { _ = admin.Close() })
+	t.Cleanup(func() {
+		require.NoError(t, admin.ACLSetUser(context.Background(), "default", "+set").Err())
+	})
+	require.NoError(t, admin.ACLSetUser(t.Context(), "default", "-set").Err())
+
+	tests := []struct {
+		name    string
+		timeout string
+	}{
+		{name: "without_expiration", timeout: ""},
+		{name: "with_expiration", timeout: time.Now().UTC().Add(time.Minute).Format(time.RFC3339)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &kvProto.Request{
+				Storage: storage,
+				Items: []*kvProto.Item{
+					{Key: tt.name, Value: []byte("v"), Timeout: tt.timeout},
+				},
+			}
+
+			err := client.Call("kv.Set", req, &kvProto.Response{})
+
+			require.ErrorContains(t, err, "NOPERM")
+			require.Equal(t, 0, has(t, client, tt.name))
+		})
+	}
 }
 
 func TestMGetReturnsStoredValues(t *testing.T) {
