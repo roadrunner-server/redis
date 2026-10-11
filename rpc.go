@@ -41,8 +41,8 @@ func (r *rpc) begin(command, connection string, keys ...string) *call {
 	cl := &call{ctx: ctx, span: span, op: errors.Op("redis_rpc_" + command)}
 
 	for _, k := range keys {
-		if strings.TrimSpace(k) == "" {
-			cl.err = cl.fail(errors.E(errors.EmptyKey))
+		if err := requireKey(k); err != nil {
+			cl.err = cl.fail(err)
 			return cl
 		}
 	}
@@ -75,9 +75,17 @@ func requireKeys(keys []string) error {
 		return errors.E(errors.NoKeys)
 	}
 	for _, k := range keys {
-		if strings.TrimSpace(k) == "" {
-			return errors.E(errors.EmptyKey)
+		if err := requireKey(k); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// requireKey rejects an empty key.
+func requireKey(key string) error {
+	if strings.TrimSpace(key) == "" {
+		return errors.E(errors.EmptyKey)
 	}
 	return nil
 }

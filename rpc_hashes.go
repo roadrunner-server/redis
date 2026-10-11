@@ -1,8 +1,6 @@
 package redis
 
 import (
-	"strings"
-
 	redisV1 "github.com/roadrunner-server/api-go/v6/redis/v1"
 	"github.com/roadrunner-server/errors"
 )
@@ -18,8 +16,8 @@ func (r *rpc) HSet(in *redisV1.HSetRequest, out *redisV1.IntReply) error {
 	}
 	args := make([]any, 0, 2*len(in.GetFields()))
 	for f, v := range in.GetFields() {
-		if strings.TrimSpace(f) == "" {
-			return cl.fail(errors.E(errors.EmptyKey))
+		if err := requireKey(f); err != nil {
+			return cl.fail(err)
 		}
 		args = append(args, f, v)
 	}

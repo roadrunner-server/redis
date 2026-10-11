@@ -2,7 +2,6 @@ package redis
 
 import (
 	stderr "errors"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -90,8 +89,8 @@ func (r *rpc) MSet(in *redisV1.MSetRequest, _ *redisV1.Empty) error {
 	}
 	args := make([]any, 0, 2*len(in.GetValues()))
 	for k, v := range in.GetValues() {
-		if strings.TrimSpace(k) == "" {
-			return cl.fail(errors.E(errors.EmptyKey))
+		if err := requireKey(k); err != nil {
+			return cl.fail(err)
 		}
 		args = append(args, k, v)
 	}
