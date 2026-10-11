@@ -236,7 +236,7 @@ func (c *call) mapReply(cmd *redis.MapStringStringCmd, out *redisV1.MapReply) er
 	return nil
 }
 
-func (c *call) scoredReply(cmd *redis.ZSliceCmd, out *redisV1.ScoredMembersReply) error { //nolint:unused // used by later commands
+func (c *call) scoredReply(cmd *redis.ZSliceCmd, out *redisV1.ScoredMembersReply) error {
 	v, err := cmd.Result()
 	if err != nil {
 		return c.fail(err)
@@ -249,7 +249,7 @@ func (c *call) scoredReply(cmd *redis.ZSliceCmd, out *redisV1.ScoredMembersReply
 	return nil
 }
 
-func (c *call) optIntReply(cmd *redis.IntCmd, out *redisV1.OptionalIntReply) error { //nolint:unused // used by later commands
+func (c *call) optIntReply(cmd *redis.IntCmd, out *redisV1.OptionalIntReply) error {
 	v, err := cmd.Result()
 	if stderr.Is(err, redis.Nil) {
 		out.Value = nil
@@ -262,7 +262,7 @@ func (c *call) optIntReply(cmd *redis.IntCmd, out *redisV1.OptionalIntReply) err
 	return nil
 }
 
-func (c *call) optFloatReply(cmd *redis.FloatCmd, out *redisV1.OptionalFloatReply) error { //nolint:unused // used by later commands
+func (c *call) optFloatReply(cmd *redis.FloatCmd, out *redisV1.OptionalFloatReply) error {
 	v, err := cmd.Result()
 	if stderr.Is(err, redis.Nil) {
 		out.Value = nil
