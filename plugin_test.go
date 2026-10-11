@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/redis/v6/conn"
 	"github.com/stretchr/testify/require"
@@ -101,6 +102,7 @@ func TestInitOpensOneClientPerConnection(t *testing.T) {
 		name      string
 		conns     map[string]*conn.Config
 		wantNames []string
+		wantAddr  string
 	}{
 		{
 			name:      "two connections",
@@ -111,6 +113,13 @@ func TestInitOpensOneClientPerConnection(t *testing.T) {
 			name:      "null connection body gets defaults",
 			conns:     map[string]*conn.Config{"default": nil},
 			wantNames: []string{"default"},
+			wantAddr:  "127.0.0.1:6379",
+		},
+		{
+			name:      "explicit single address",
+			conns:     map[string]*conn.Config{"default": {Addrs: []string{"127.0.0.1:6379"}}},
+			wantNames: []string{"default"},
+			wantAddr:  "127.0.0.1:6379",
 		},
 		{
 			name:      "empty section",
@@ -127,6 +136,9 @@ func TestInitOpensOneClientPerConnection(t *testing.T) {
 			require.Len(t, p.connections, len(tc.wantNames))
 			for _, n := range tc.wantNames {
 				require.Contains(t, p.connections, n)
+				if tc.wantAddr != "" {
+					require.Equal(t, tc.wantAddr, p.connections[n].(*redis.Client).Options().Addr)
+				}
 			}
 			require.Len(t, p.MetricsCollector(), len(tc.wantNames))
 		})
