@@ -30,7 +30,6 @@ type Configurer interface {
 type Driver struct {
 	universalClient  redis.UniversalClient
 	tracer           *sdktrace.TracerProvider
-	log              *slog.Logger
 	cfg              *conn.Config
 	metricsCollector *redisprometheus.Collector
 }
@@ -43,7 +42,6 @@ func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *
 	}
 
 	d := &Driver{
-		log:    log,
 		tracer: tracer,
 	}
 
