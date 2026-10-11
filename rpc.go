@@ -103,7 +103,7 @@ func toArgs(members [][]byte) []any { //nolint:unused // used by later commands
 	return out
 }
 
-func toBytes(values []string) [][]byte { //nolint:unused // used by later commands
+func toBytes(values []string) [][]byte {
 	out := make([][]byte, 0, len(values))
 	for _, v := range values {
 		out = append(out, []byte(v))
@@ -175,7 +175,7 @@ func (c *call) bytesReply(cmd *redis.StringCmd, out *redisV1.BytesReply) error {
 	return nil
 }
 
-func (c *call) bytesListReply(cmd *redis.StringSliceCmd, out *redisV1.BytesListReply) error { //nolint:unused // used by later commands
+func (c *call) bytesListReply(cmd *redis.StringSliceCmd, out *redisV1.BytesListReply) error {
 	v, err := cmd.Result()
 	if stderr.Is(err, redis.Nil) {
 		out.Values = nil
@@ -216,7 +216,7 @@ func (c *call) boolListReply(cmd *redis.BoolSliceCmd, out *redisV1.BoolListReply
 	return nil
 }
 
-func (c *call) mapReply(cmd *redis.MapStringStringCmd, out *redisV1.MapReply) error { //nolint:unused // used by later commands
+func (c *call) mapReply(cmd *redis.MapStringStringCmd, out *redisV1.MapReply) error {
 	v, err := cmd.Result()
 	if err != nil {
 		return c.fail(err)
