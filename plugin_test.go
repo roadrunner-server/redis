@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/roadrunner-server/errors"
-	rkv "github.com/roadrunner-server/redis/v6/kv"
+	"github.com/roadrunner-server/redis/v6/conn"
 	"github.com/stretchr/testify/require"
 )
 
 // stubConfigurer hands the driver a pre-built config instead of decoding YAML.
 type stubConfigurer struct {
 	sections map[string]bool
-	cfg      *rkv.Config
+	cfg      *conn.Config
 	err      error
 }
 
@@ -24,7 +24,7 @@ func (s *stubConfigurer) UnmarshalKey(_ string, out any) error {
 		return s.err
 	}
 
-	p, ok := out.(**rkv.Config)
+	p, ok := out.(**conn.Config)
 	if !ok {
 		return errors.Str("unexpected target type")
 	}
@@ -81,7 +81,7 @@ func TestKvFromConfigPropagatesDecodeError(t *testing.T) {
 func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	c := &stubConfigurer{
 		sections: map[string]bool{"kv.redis-rr": true},
-		cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:16379"}},
+		cfg:      &conn.Config{Addrs: []string{"127.0.0.1:16379"}},
 	}
 	p := newPlugin(t, c)
 
