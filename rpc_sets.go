@@ -43,6 +43,9 @@ func (r *rpc) SIsMember(in *redisV1.SIsMemberRequest, out *redisV1.BoolReply) er
 	if cl.err != nil {
 		return cl.err
 	}
+	if err := requireMember(in.GetMember()); err != nil {
+		return cl.fail(err)
+	}
 	return cl.boolReply(cl.c.SIsMember(cl.ctx, in.GetKey(), in.GetMember()), out)
 }
 

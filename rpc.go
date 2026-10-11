@@ -88,9 +88,17 @@ func requireMembers(members [][]byte) error {
 		return errors.E(errors.NoKeys)
 	}
 	for _, m := range members {
-		if len(bytes.TrimSpace(m)) == 0 {
-			return errors.E(errors.EmptyKey)
+		if err := requireMember(m); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// requireMember rejects an empty member.
+func requireMember(member []byte) error {
+	if len(bytes.TrimSpace(member)) == 0 {
+		return errors.E(errors.EmptyKey)
 	}
 	return nil
 }

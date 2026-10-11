@@ -19,6 +19,7 @@ func TestSets(t *testing.T) {
 		{name: "smembers missing is empty", method: "redis.SMembers", in: &redisV1.SMembersRequest{Connection: connDefault, Key: "s"}, out: &redisV1.BytesListReply{}, want: &redisV1.BytesListReply{}},
 		{name: "sismember", setup: [][]any{{"sadd", "s", "a"}}, method: "redis.SIsMember", in: &redisV1.SIsMemberRequest{Connection: connDefault, Key: "s", Member: b("a")}, out: &redisV1.BoolReply{}, want: &redisV1.BoolReply{Value: true}},
 		{name: "sismember missing", method: "redis.SIsMember", in: &redisV1.SIsMemberRequest{Connection: connDefault, Key: "s", Member: b("a")}, out: &redisV1.BoolReply{}, want: &redisV1.BoolReply{Value: false}},
+		{name: "sismember empty member", method: "redis.SIsMember", in: &redisV1.SIsMemberRequest{Connection: connDefault, Key: "s", Member: b(" ")}, out: &redisV1.BoolReply{}, wantErr: "key can't be empty string"},
 		{name: "smismember keeps positions", setup: [][]any{{"sadd", "s", "a"}}, method: "redis.SMIsMember", in: &redisV1.SMIsMemberRequest{Connection: connDefault, Key: "s", Members: bs("a", "b")}, out: &redisV1.BoolListReply{}, want: &redisV1.BoolListReply{Values: []bool{true, false}}},
 		{name: "scard", setup: [][]any{{"sadd", "s", "a", "b"}}, method: "redis.SCard", in: &redisV1.SCardRequest{Connection: connDefault, Key: "s"}, out: &redisV1.IntReply{}, want: &redisV1.IntReply{Value: 2}},
 
