@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// stubConfigurer hands the driver a pre-built config instead of decoding YAML.
+// stubConfigurer hands the plugin pre-built configs instead of decoding YAML.
 type stubConfigurer struct {
 	sections map[string]bool
 	cfg      *conn.Config
+	conns    map[string]*conn.Config
 	err      error
 }
 
@@ -24,11 +25,14 @@ func (s *stubConfigurer) UnmarshalKey(_ string, out any) error {
 		return s.err
 	}
 
-	p, ok := out.(**conn.Config)
-	if !ok {
+	switch p := out.(type) {
+	case **conn.Config:
+		*p = s.cfg
+	case *map[string]*conn.Config:
+		*p = s.conns
+	default:
 		return errors.Str("unexpected target type")
 	}
-	*p = s.cfg
 	return nil
 }
 
@@ -90,4 +94,59 @@ func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, st)
 	require.Len(t, p.MetricsCollector(), 1, "the driver's collector should be exposed once a storage exists")
+}
+
+func TestInitOpensOneClientPerConnection(t *testing.T) {
+	cases := []struct {
+		name      string
+		conns     map[string]*conn.Config
+		wantNames []string
+	}{
+		{
+			name:      "two connections",
+			conns:     map[string]*conn.Config{"default": {Addrs: []string{"127.0.0.1:16379"}}, "second": {Addrs: []string{"127.0.0.1:16379"}, DB: 1}},
+			wantNames: []string{"default", "second"},
+		},
+		{
+			name:      "null connection body gets defaults",
+			conns:     map[string]*conn.Config{"default": nil},
+			wantNames: []string{"default"},
+		},
+		{
+			name:      "empty section",
+			conns:     map[string]*conn.Config{},
+			wantNames: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := newPlugin(t, &stubConfigurer{sections: map[string]bool{PluginName: true}, conns: tc.conns})
+			t.Cleanup(func() { require.NoError(t, p.Stop(t.Context())) })
+
+			require.Len(t, p.connections, len(tc.wantNames))
+			for _, n := range tc.wantNames {
+				require.Contains(t, p.connections, n)
+			}
+			require.Len(t, p.MetricsCollector(), len(tc.wantNames))
+		})
+	}
+}
+
+func TestInitWithoutSectionKeepsNoConnections(t *testing.T) {
+	p := newPlugin(t, &stubConfigurer{})
+
+	require.Empty(t, p.connections)
+	require.Nil(t, p.MetricsCollector())
+}
+
+func TestInitFailsOnUnreadableRootCA(t *testing.T) {
+	c := &stubConfigurer{
+		sections: map[string]bool{PluginName: true},
+		conns:    map[string]*conn.Config{"default": {TLSConfig: &conn.TLSConfig{RootCa: "/nonexistent/ca.crt"}}},
+	}
+
+	err := (&Plugin{}).Init(c, discardLogger{})
+
+	require.ErrorContains(t, err, "no such file")
 }
