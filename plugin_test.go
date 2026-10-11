@@ -12,27 +12,30 @@ import (
 )
 
 // stubConfigurer hands the plugin pre-built configs instead of decoding YAML.
+// cfg answers the KV driver keys, section answers the redis section.
 type stubConfigurer struct {
 	sections map[string]bool
 	cfg      *conn.Config
-	conns    map[string]*conn.Config
+	section  *conn.Config
 	err      error
 }
 
 func (s *stubConfigurer) Has(name string) bool { return s.sections[name] }
 
-func (s *stubConfigurer) UnmarshalKey(_ string, out any) error {
+func (s *stubConfigurer) UnmarshalKey(name string, out any) error {
 	if s.err != nil {
 		return s.err
 	}
 
-	switch p := out.(type) {
-	case **conn.Config:
-		*p = s.cfg
-	case *map[string]*conn.Config:
-		*p = s.conns
-	default:
+	p, ok := out.(**conn.Config)
+	if !ok {
 		return errors.Str("unexpected target type")
+	}
+
+	if name == PluginName {
+		*p = s.section
+	} else {
+		*p = s.cfg
 	}
 	return nil
 }
@@ -97,65 +100,47 @@ func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	require.Len(t, p.MetricsCollector(), 1, "the driver's collector should be exposed once a storage exists")
 }
 
-func TestInitOpensOneClientPerConnection(t *testing.T) {
+func TestInitOpensTheClientFromTheSection(t *testing.T) {
 	cases := []struct {
-		name      string
-		conns     map[string]*conn.Config
-		wantNames []string
-		wantAddr  string
+		name     string
+		section  *conn.Config
+		wantAddr string
 	}{
 		{
-			name:      "two connections",
-			conns:     map[string]*conn.Config{"default": {Addrs: []string{"127.0.0.1:16379"}}, "second": {Addrs: []string{"127.0.0.1:16379"}, DB: 1}},
-			wantNames: []string{"default", "second"},
+			name:     "explicit address",
+			section:  &conn.Config{Addrs: []string{"127.0.0.1:16379"}, DB: 1},
+			wantAddr: "127.0.0.1:16379",
 		},
 		{
-			name:      "null connection body gets defaults",
-			conns:     map[string]*conn.Config{"default": nil},
-			wantNames: []string{"default"},
-			wantAddr:  "127.0.0.1:6379",
-		},
-		{
-			name:      "explicit single address",
-			conns:     map[string]*conn.Config{"default": {Addrs: []string{"127.0.0.1:6379"}}},
-			wantNames: []string{"default"},
-			wantAddr:  "127.0.0.1:6379",
-		},
-		{
-			name:      "empty section",
-			conns:     map[string]*conn.Config{},
-			wantNames: nil,
+			name:     "null section body gets defaults",
+			section:  nil,
+			wantAddr: "127.0.0.1:6379",
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p := newPlugin(t, &stubConfigurer{sections: map[string]bool{PluginName: true}, conns: tc.conns})
+			p := newPlugin(t, &stubConfigurer{sections: map[string]bool{PluginName: true}, section: tc.section})
 			t.Cleanup(func() { require.NoError(t, p.Stop(t.Context())) })
 
-			require.Len(t, p.connections, len(tc.wantNames))
-			for _, n := range tc.wantNames {
-				require.Contains(t, p.connections, n)
-				if tc.wantAddr != "" {
-					require.Equal(t, tc.wantAddr, p.connections[n].(*redis.Client).Options().Addr)
-				}
-			}
-			require.Len(t, p.MetricsCollector(), len(tc.wantNames))
+			require.Equal(t, tc.wantAddr, p.client.(*redis.Client).Options().Addr)
+			require.Len(t, p.MetricsCollector(), 1)
 		})
 	}
 }
 
-func TestInitWithoutSectionKeepsNoConnections(t *testing.T) {
+func TestInitWithoutSectionKeepsNoClient(t *testing.T) {
 	p := newPlugin(t, &stubConfigurer{})
 
-	require.Empty(t, p.connections)
+	require.Nil(t, p.client)
 	require.Nil(t, p.MetricsCollector())
+	require.NoError(t, p.Stop(t.Context()))
 }
 
 func TestInitFailsOnUnreadableRootCA(t *testing.T) {
 	c := &stubConfigurer{
 		sections: map[string]bool{PluginName: true},
-		conns:    map[string]*conn.Config{"default": {TLSConfig: &conn.TLSConfig{RootCa: "/nonexistent/ca.crt"}}},
+		section:  &conn.Config{TLSConfig: &conn.TLSConfig{RootCa: "/nonexistent/ca.crt"}},
 	}
 
 	err := (&Plugin{}).Init(c, discardLogger{})

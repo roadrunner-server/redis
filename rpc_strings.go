@@ -16,7 +16,7 @@ var (
 )
 
 func (r *rpc) Get(in *redisV1.GetRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("get", in.GetConnection(), in.GetKey())
+	cl := r.begin("get", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -25,7 +25,7 @@ func (r *rpc) Get(in *redisV1.GetRequest, out *redisV1.BytesReply) error {
 }
 
 func (r *rpc) Set(in *redisV1.SetRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("set", in.GetConnection(), in.GetKey())
+	cl := r.begin("set", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -67,7 +67,7 @@ func (r *rpc) Set(in *redisV1.SetRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) MGet(in *redisV1.MGetRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("mget", in.GetConnection())
+	cl := r.begin("mget")
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -79,7 +79,7 @@ func (r *rpc) MGet(in *redisV1.MGetRequest, out *redisV1.BytesListReply) error {
 }
 
 func (r *rpc) MSet(in *redisV1.MSetRequest, _ *redisV1.Empty) error {
-	cl := r.begin("mset", in.GetConnection())
+	cl := r.begin("mset")
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -101,7 +101,7 @@ func (r *rpc) MSet(in *redisV1.MSetRequest, _ *redisV1.Empty) error {
 }
 
 func (r *rpc) GetDel(in *redisV1.GetDelRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("getdel", in.GetConnection(), in.GetKey())
+	cl := r.begin("getdel", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -110,7 +110,7 @@ func (r *rpc) GetDel(in *redisV1.GetDelRequest, out *redisV1.BytesReply) error {
 }
 
 func (r *rpc) Append(in *redisV1.AppendRequest, out *redisV1.IntReply) error {
-	cl := r.begin("append", in.GetConnection(), in.GetKey())
+	cl := r.begin("append", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -119,7 +119,7 @@ func (r *rpc) Append(in *redisV1.AppendRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) StrLen(in *redisV1.StrLenRequest, out *redisV1.IntReply) error {
-	cl := r.begin("strlen", in.GetConnection(), in.GetKey())
+	cl := r.begin("strlen", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -128,7 +128,7 @@ func (r *rpc) StrLen(in *redisV1.StrLenRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Incr(in *redisV1.IncrRequest, out *redisV1.IntReply) error {
-	cl := r.begin("incr", in.GetConnection(), in.GetKey())
+	cl := r.begin("incr", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -137,7 +137,7 @@ func (r *rpc) Incr(in *redisV1.IncrRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) IncrBy(in *redisV1.IncrByRequest, out *redisV1.IntReply) error {
-	cl := r.begin("incrby", in.GetConnection(), in.GetKey())
+	cl := r.begin("incrby", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -146,7 +146,7 @@ func (r *rpc) IncrBy(in *redisV1.IncrByRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) IncrByFloat(in *redisV1.IncrByFloatRequest, out *redisV1.FloatReply) error {
-	cl := r.begin("incrbyfloat", in.GetConnection(), in.GetKey())
+	cl := r.begin("incrbyfloat", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -155,7 +155,7 @@ func (r *rpc) IncrByFloat(in *redisV1.IncrByFloatRequest, out *redisV1.FloatRepl
 }
 
 func (r *rpc) Decr(in *redisV1.DecrRequest, out *redisV1.IntReply) error {
-	cl := r.begin("decr", in.GetConnection(), in.GetKey())
+	cl := r.begin("decr", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -164,7 +164,7 @@ func (r *rpc) Decr(in *redisV1.DecrRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) DecrBy(in *redisV1.DecrByRequest, out *redisV1.IntReply) error {
-	cl := r.begin("decrby", in.GetConnection(), in.GetKey())
+	cl := r.begin("decrby", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

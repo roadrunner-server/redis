@@ -11,7 +11,7 @@ import (
 var errByScoreByLex = stderr.New("by_score and by_lex are mutually exclusive")
 
 func (r *rpc) ZAdd(in *redisV1.ZAddRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zadd", in.GetConnection(), in.GetKey())
+	cl := r.begin("zadd", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -31,7 +31,7 @@ func (r *rpc) ZAdd(in *redisV1.ZAddRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) ZRem(in *redisV1.ZRemRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zrem", in.GetConnection(), in.GetKey())
+	cl := r.begin("zrem", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -43,7 +43,7 @@ func (r *rpc) ZRem(in *redisV1.ZRemRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) ZScore(in *redisV1.ZScoreRequest, out *redisV1.OptionalFloatReply) error {
-	cl := r.begin("zscore", in.GetConnection(), in.GetKey())
+	cl := r.begin("zscore", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -55,7 +55,7 @@ func (r *rpc) ZScore(in *redisV1.ZScoreRequest, out *redisV1.OptionalFloatReply)
 }
 
 func (r *rpc) ZIncrBy(in *redisV1.ZIncrByRequest, out *redisV1.FloatReply) error {
-	cl := r.begin("zincrby", in.GetConnection(), in.GetKey())
+	cl := r.begin("zincrby", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -67,7 +67,7 @@ func (r *rpc) ZIncrBy(in *redisV1.ZIncrByRequest, out *redisV1.FloatReply) error
 }
 
 func (r *rpc) ZCard(in *redisV1.ZCardRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zcard", in.GetConnection(), in.GetKey())
+	cl := r.begin("zcard", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -76,7 +76,7 @@ func (r *rpc) ZCard(in *redisV1.ZCardRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) ZCount(in *redisV1.ZCountRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zcount", in.GetConnection(), in.GetKey())
+	cl := r.begin("zcount", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -85,7 +85,7 @@ func (r *rpc) ZCount(in *redisV1.ZCountRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) ZRank(in *redisV1.ZRankRequest, out *redisV1.OptionalIntReply) error {
-	cl := r.begin("zrank", in.GetConnection(), in.GetKey())
+	cl := r.begin("zrank", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -97,7 +97,7 @@ func (r *rpc) ZRank(in *redisV1.ZRankRequest, out *redisV1.OptionalIntReply) err
 }
 
 func (r *rpc) ZRevRank(in *redisV1.ZRevRankRequest, out *redisV1.OptionalIntReply) error {
-	cl := r.begin("zrevrank", in.GetConnection(), in.GetKey())
+	cl := r.begin("zrevrank", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -109,7 +109,7 @@ func (r *rpc) ZRevRank(in *redisV1.ZRevRankRequest, out *redisV1.OptionalIntRepl
 }
 
 func (r *rpc) ZRange(in *redisV1.ZRangeRequest, out *redisV1.ScoredMembersReply) error {
-	cl := r.begin("zrange", in.GetConnection(), in.GetKey())
+	cl := r.begin("zrange", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -142,7 +142,7 @@ func (r *rpc) ZRange(in *redisV1.ZRangeRequest, out *redisV1.ScoredMembersReply)
 }
 
 func (r *rpc) ZPopMin(in *redisV1.ZPopMinRequest, out *redisV1.ScoredMembersReply) error {
-	cl := r.begin("zpopmin", in.GetConnection(), in.GetKey())
+	cl := r.begin("zpopmin", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -151,7 +151,7 @@ func (r *rpc) ZPopMin(in *redisV1.ZPopMinRequest, out *redisV1.ScoredMembersRepl
 }
 
 func (r *rpc) ZPopMax(in *redisV1.ZPopMaxRequest, out *redisV1.ScoredMembersReply) error {
-	cl := r.begin("zpopmax", in.GetConnection(), in.GetKey())
+	cl := r.begin("zpopmax", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -160,7 +160,7 @@ func (r *rpc) ZPopMax(in *redisV1.ZPopMaxRequest, out *redisV1.ScoredMembersRepl
 }
 
 func (r *rpc) ZRemRangeByRank(in *redisV1.ZRemRangeByRankRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zremrangebyrank", in.GetConnection(), in.GetKey())
+	cl := r.begin("zremrangebyrank", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -169,7 +169,7 @@ func (r *rpc) ZRemRangeByRank(in *redisV1.ZRemRangeByRankRequest, out *redisV1.I
 }
 
 func (r *rpc) ZRemRangeByScore(in *redisV1.ZRemRangeByScoreRequest, out *redisV1.IntReply) error {
-	cl := r.begin("zremrangebyscore", in.GetConnection(), in.GetKey())
+	cl := r.begin("zremrangebyscore", in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

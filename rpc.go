@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	stderr "errors"
-	"fmt"
 	"strings"
 
 	"github.com/redis/go-redis/v9"
@@ -15,17 +14,14 @@ import (
 
 const tracerName = "redis"
 
-var (
-	errEmptyConnection  = stderr.New("no connection provided")
-	errNoSuchConnection = stderr.New("no such connection")
-)
+var errNotConfigured = stderr.New("redis section is not configured")
 
 type rpc struct {
 	pl     *Plugin
 	tracer trace.Tracer
 }
 
-// call carries the span, the resolved client and the error of one RPC call.
+// call carries the span, the client and the error of one RPC call.
 type call struct {
 	ctx  context.Context
 	span trace.Span
@@ -34,9 +30,9 @@ type call struct {
 	err  error
 }
 
-// begin opens the span, validates the keys and resolves the connection.
+// begin opens the span, validates the keys and resolves the client.
 // The caller must defer end() and return err when it is set.
-func (r *rpc) begin(command, connection string, keys ...string) *call {
+func (r *rpc) begin(command string, keys ...string) *call {
 	ctx, span := r.tracer.Start(context.Background(), "redis:"+command)
 	cl := &call{ctx: ctx, span: span, op: errors.Op("redis_rpc_" + command)}
 
@@ -47,18 +43,12 @@ func (r *rpc) begin(command, connection string, keys ...string) *call {
 		}
 	}
 
-	if connection == "" {
-		cl.err = cl.fail(errEmptyConnection)
+	if r.pl.client == nil {
+		cl.err = cl.fail(errNotConfigured)
 		return cl
 	}
 
-	c, ok := r.pl.connections[connection]
-	if !ok {
-		cl.err = cl.fail(fmt.Errorf("%w: %s", errNoSuchConnection, connection))
-		return cl
-	}
-
-	cl.c = c
+	cl.c = r.pl.client
 	return cl
 }
 

@@ -43,10 +43,10 @@ type Plugin struct {
 	tracer *sdktrace.TracerProvider
 	// prometheus metrics of the KV driver
 	metricsCollector *redisprometheus.Collector
-	// named clients from the redis config section
-	connections map[string]redis.UniversalClient
-	// one prometheus collector per named connection
-	collectors []prometheus.Collector
+	// client of the redis config section, nil without the section
+	client redis.UniversalClient
+	// prometheus metrics of the client
+	clientCollector *redisprometheus.Collector
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
@@ -55,30 +55,27 @@ func (p *Plugin) Init(cfg Configurer, log Logger) error {
 	p.log = log.NamedLogger(PluginName)
 	p.cfgPlugin = cfg
 	p.tracer = sdktrace.NewTracerProvider()
-	p.connections = make(map[string]redis.UniversalClient)
 
 	if !cfg.Has(PluginName) {
 		return nil
 	}
 
-	var conns map[string]*conn.Config
-	if err := cfg.UnmarshalKey(PluginName, &conns); err != nil {
+	var c *conn.Config
+	if err := cfg.UnmarshalKey(PluginName, &c); err != nil {
 		return errors.E(op, err)
 	}
 
-	for name, c := range conns {
-		if c == nil {
-			c = &conn.Config{}
-		}
-
-		client, err := conn.NewClient(c, p.log)
-		if err != nil {
-			return errors.E(op, err)
-		}
-
-		p.connections[name] = client
-		p.collectors = append(p.collectors, redisprometheus.NewCollector("rr", "redis_"+name, client))
+	if c == nil {
+		c = &conn.Config{}
 	}
+
+	client, err := conn.NewClient(c, p.log)
+	if err != nil {
+		return errors.E(op, err)
+	}
+
+	p.client = client
+	p.clientCollector = redisprometheus.NewCollector("rr", "redis_rpc", client)
 
 	return nil
 }
@@ -88,8 +85,8 @@ func (p *Plugin) Serve() chan error {
 }
 
 func (p *Plugin) Stop(context.Context) error {
-	for _, c := range p.connections {
-		_ = c.Close()
+	if p.client != nil {
+		_ = p.client.Close()
 	}
 
 	return nil
@@ -128,8 +125,10 @@ func (p *Plugin) MetricsCollector() []prometheus.Collector {
 	p.rwm.RLock()
 	defer p.rwm.RUnlock()
 
-	out := make([]prometheus.Collector, 0, len(p.collectors)+1)
-	out = append(out, p.collectors...)
+	out := make([]prometheus.Collector, 0, 2)
+	if p.clientCollector != nil {
+		out = append(out, p.clientCollector)
+	}
 	if p.metricsCollector != nil {
 		out = append(out, p.metricsCollector)
 	}

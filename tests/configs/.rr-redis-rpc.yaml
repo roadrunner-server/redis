@@ -8,10 +8,5 @@ logs:
   level: debug
 
 redis:
-  default:
-    addrs:
-      - "127.0.0.1:16379"
-  second:
-    addrs:
-      - "127.0.0.1:16379"
-    db: 1
+  addrs:
+    - "127.0.0.1:16379"
