@@ -140,3 +140,10 @@ func (p *Plugin) MetricsCollector() []prometheus.Collector {
 
 	return out
 }
+
+func (p *Plugin) RPC() any {
+	return &rpc{
+		pl:     p,
+		tracer: p.tracer.Tracer(tracerName),
+	}
+}
