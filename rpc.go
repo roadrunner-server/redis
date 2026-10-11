@@ -95,7 +95,7 @@ func requireMembers(members [][]byte) error { //nolint:unused // used by later c
 	return nil
 }
 
-func toArgs(members [][]byte) []any { //nolint:unused // used by later commands
+func toArgs(members [][]byte) []any {
 	out := make([]any, 0, len(members))
 	for _, m := range members {
 		out = append(out, m)
