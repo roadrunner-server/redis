@@ -83,7 +83,7 @@ func requireKeys(keys []string) error {
 }
 
 // requireMembers rejects an empty member list and empty members.
-func requireMembers(members [][]byte) error { //nolint:unused // used by later commands
+func requireMembers(members [][]byte) error {
 	if len(members) == 0 {
 		return errors.E(errors.NoKeys)
 	}
@@ -207,7 +207,7 @@ func (c *call) sliceReply(cmd *redis.SliceCmd, out *redisV1.BytesListReply) erro
 	return nil
 }
 
-func (c *call) boolListReply(cmd *redis.BoolSliceCmd, out *redisV1.BoolListReply) error { //nolint:unused // used by later commands
+func (c *call) boolListReply(cmd *redis.BoolSliceCmd, out *redisV1.BoolListReply) error {
 	v, err := cmd.Result()
 	if err != nil {
 		return c.fail(err)
