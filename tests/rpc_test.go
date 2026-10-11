@@ -91,11 +91,12 @@ func runCases(t *testing.T, client *rpc.Client, cases []rpcCase) {
 }
 
 func sortValues(m proto.Message) {
-	l, ok := m.(*redisV1.BytesListReply)
-	if !ok {
-		return
+	switch l := m.(type) {
+	case *redisV1.BytesListReply:
+		sort.Slice(l.Values, func(i, j int) bool { return bytes.Compare(l.Values[i], l.Values[j]) < 0 })
+	case *redisV1.ScanReply:
+		sort.Strings(l.Keys)
 	}
-	sort.Slice(l.Values, func(i, j int) bool { return bytes.Compare(l.Values[i], l.Values[j]) < 0 })
 }
 
 func b(s string) []byte { return []byte(s) }

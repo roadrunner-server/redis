@@ -131,7 +131,7 @@ func (c *call) floatReply(cmd *redis.FloatCmd, out *redisV1.FloatReply) error {
 	return nil
 }
 
-func (c *call) boolReply(cmd *redis.BoolCmd, out *redisV1.BoolReply) error { //nolint:unused // used by later commands
+func (c *call) boolReply(cmd *redis.BoolCmd, out *redisV1.BoolReply) error {
 	v, err := cmd.Result()
 	if err != nil {
 		return c.fail(err)
@@ -140,8 +140,8 @@ func (c *call) boolReply(cmd *redis.BoolCmd, out *redisV1.BoolReply) error { //n
 	return nil
 }
 
-// status maps an OK status to true.
-func (c *call) statusReply(cmd *redis.StatusCmd, out *redisV1.BoolReply) error { //nolint:unused // used by later commands
+// statusReply maps an OK status to true.
+func (c *call) statusReply(cmd *redis.StatusCmd, out *redisV1.BoolReply) error {
 	if err := cmd.Err(); err != nil {
 		return c.fail(err)
 	}
@@ -149,7 +149,7 @@ func (c *call) statusReply(cmd *redis.StatusCmd, out *redisV1.BoolReply) error {
 	return nil
 }
 
-func (c *call) stringReply(cmd *redis.StatusCmd, out *redisV1.StringReply) error { //nolint:unused // used by later commands
+func (c *call) stringReply(cmd *redis.StatusCmd, out *redisV1.StringReply) error {
 	v, err := cmd.Result()
 	if err != nil {
 		return c.fail(err)
@@ -158,7 +158,7 @@ func (c *call) stringReply(cmd *redis.StatusCmd, out *redisV1.StringReply) error
 	return nil
 }
 
-// bytes maps a nil reply to an absent value.
+// bytesReply maps a nil reply to an absent value.
 func (c *call) bytesReply(cmd *redis.StringCmd, out *redisV1.BytesReply) error {
 	v, err := cmd.Bytes()
 	if stderr.Is(err, redis.Nil) {
@@ -188,7 +188,7 @@ func (c *call) bytesListReply(cmd *redis.StringSliceCmd, out *redisV1.BytesListR
 	return nil
 }
 
-// slice maps MGET and HMGET replies: a nil entry sets found[i] to false.
+// sliceReply maps MGET and HMGET replies: a nil entry sets found[i] to false.
 func (c *call) sliceReply(cmd *redis.SliceCmd, out *redisV1.BytesListReply) error {
 	v, err := cmd.Result()
 	if err != nil {
