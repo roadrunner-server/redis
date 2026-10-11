@@ -10,7 +10,11 @@ import (
 	"github.com/roadrunner-server/errors"
 )
 
-var errNxXx = stderr.New("nx and xx are mutually exclusive")
+var (
+	errNxXx   = stderr.New("nx and xx are mutually exclusive")
+	errExPx   = stderr.New("ex and px are mutually exclusive")
+	errExpire = stderr.New("invalid expire time")
+)
 
 func (r *rpc) Get(in *redisV1.GetRequest, out *redisV1.BytesReply) error {
 	cl := r.begin("get", in.GetConnection(), in.GetKey())
@@ -29,6 +33,12 @@ func (r *rpc) Set(in *redisV1.SetRequest, out *redisV1.BoolReply) error {
 	}
 	if in.GetNx() && in.GetXx() {
 		return cl.fail(errNxXx)
+	}
+	if in.Ex != nil && in.Px != nil {
+		return cl.fail(errExPx)
+	}
+	if (in.Ex != nil && in.GetEx() <= 0) || (in.Px != nil && in.GetPx() <= 0) {
+		return cl.fail(errExpire)
 	}
 
 	args := redis.SetArgs{KeepTTL: in.GetKeepTtl()}
