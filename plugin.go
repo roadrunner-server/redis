@@ -3,10 +3,12 @@ package redis
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/extra/redisprometheus/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/endure/v2/dep"
 	"github.com/roadrunner-server/errors"
@@ -41,12 +43,15 @@ type Plugin struct {
 	tracer *sdktrace.TracerProvider
 	// prometheus metrics
 	metricsCollector *redisprometheus.Collector
+	// clients of the KV storages by storage name, used by the RPC service
+	clients map[string]redis.UniversalClient
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
 	p.log = log.NamedLogger(PluginName)
 	p.cfgPlugin = cfg
 	p.tracer = sdktrace.NewTracerProvider()
+	p.clients = make(map[string]redis.UniversalClient)
 
 	return nil
 }
@@ -71,13 +76,25 @@ func (p *Plugin) KvFromConfig(_ context.Context, key string) (kv.Storage, error)
 		return nil, errors.E(op, err)
 	}
 
-	// should not be needed, but to double check
 	p.rwm.Lock()
 	defer p.rwm.Unlock()
 
 	p.metricsCollector = st.MetricsCollector()
+	p.clients[storageName(key)] = st.Client()
 
 	return st, nil
+}
+
+// storageName returns the KV storage name for the config key the KV plugin
+// passes: `kv.<name>.config` for a local config block, `<name>` for a global
+// section.
+func storageName(key string) string {
+	const prefix, suffix = "kv.", ".config"
+	if strings.HasPrefix(key, prefix) && strings.HasSuffix(key, suffix) {
+		return key[len(prefix) : len(key)-len(suffix)]
+	}
+
+	return key
 }
 
 func (p *Plugin) MetricsCollector() []prometheus.Collector {
@@ -89,4 +106,11 @@ func (p *Plugin) MetricsCollector() []prometheus.Collector {
 	}
 
 	return []prometheus.Collector{p.metricsCollector}
+}
+
+func (p *Plugin) RPC() any {
+	return &rpc{
+		pl:     p,
+		tracer: p.tracer.Tracer(tracerName),
+	}
 }
