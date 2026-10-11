@@ -6,7 +6,7 @@ import (
 )
 
 func (r *rpc) HSet(in *redisV1.HSetRequest, out *redisV1.IntReply) error {
-	cl := r.begin("hset", in.GetKey())
+	cl := r.begin("hset", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -25,7 +25,7 @@ func (r *rpc) HSet(in *redisV1.HSetRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) HSetNX(in *redisV1.HSetNXRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("hsetnx", in.GetKey(), in.GetField())
+	cl := r.begin("hsetnx", in.GetConnection(), in.GetKey(), in.GetField())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -34,7 +34,7 @@ func (r *rpc) HSetNX(in *redisV1.HSetNXRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) HGet(in *redisV1.HGetRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("hget", in.GetKey(), in.GetField())
+	cl := r.begin("hget", in.GetConnection(), in.GetKey(), in.GetField())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -43,7 +43,7 @@ func (r *rpc) HGet(in *redisV1.HGetRequest, out *redisV1.BytesReply) error {
 }
 
 func (r *rpc) HMGet(in *redisV1.HMGetRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("hmget", in.GetKey())
+	cl := r.begin("hmget", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -55,7 +55,7 @@ func (r *rpc) HMGet(in *redisV1.HMGetRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) HGetAll(in *redisV1.HGetAllRequest, out *redisV1.MapReply) error {
-	cl := r.begin("hgetall", in.GetKey())
+	cl := r.begin("hgetall", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -64,7 +64,7 @@ func (r *rpc) HGetAll(in *redisV1.HGetAllRequest, out *redisV1.MapReply) error {
 }
 
 func (r *rpc) HDel(in *redisV1.HDelRequest, out *redisV1.IntReply) error {
-	cl := r.begin("hdel", in.GetKey())
+	cl := r.begin("hdel", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -76,7 +76,7 @@ func (r *rpc) HDel(in *redisV1.HDelRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) HExists(in *redisV1.HExistsRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("hexists", in.GetKey(), in.GetField())
+	cl := r.begin("hexists", in.GetConnection(), in.GetKey(), in.GetField())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -85,7 +85,7 @@ func (r *rpc) HExists(in *redisV1.HExistsRequest, out *redisV1.BoolReply) error 
 }
 
 func (r *rpc) HLen(in *redisV1.HLenRequest, out *redisV1.IntReply) error {
-	cl := r.begin("hlen", in.GetKey())
+	cl := r.begin("hlen", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -94,7 +94,7 @@ func (r *rpc) HLen(in *redisV1.HLenRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) HKeys(in *redisV1.HKeysRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("hkeys", in.GetKey())
+	cl := r.begin("hkeys", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -103,7 +103,7 @@ func (r *rpc) HKeys(in *redisV1.HKeysRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) HVals(in *redisV1.HValsRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("hvals", in.GetKey())
+	cl := r.begin("hvals", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -112,7 +112,7 @@ func (r *rpc) HVals(in *redisV1.HValsRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) HIncrBy(in *redisV1.HIncrByRequest, out *redisV1.IntReply) error {
-	cl := r.begin("hincrby", in.GetKey(), in.GetField())
+	cl := r.begin("hincrby", in.GetConnection(), in.GetKey(), in.GetField())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -121,7 +121,7 @@ func (r *rpc) HIncrBy(in *redisV1.HIncrByRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) HIncrByFloat(in *redisV1.HIncrByFloatRequest, out *redisV1.FloatReply) error {
-	cl := r.begin("hincrbyfloat", in.GetKey(), in.GetField())
+	cl := r.begin("hincrbyfloat", in.GetConnection(), in.GetKey(), in.GetField())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

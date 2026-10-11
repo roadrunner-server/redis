@@ -6,7 +6,7 @@ import (
 )
 
 func (r *rpc) LPush(in *redisV1.LPushRequest, out *redisV1.IntReply) error {
-	cl := r.begin("lpush", in.GetKey())
+	cl := r.begin("lpush", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -18,7 +18,7 @@ func (r *rpc) LPush(in *redisV1.LPushRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) RPush(in *redisV1.RPushRequest, out *redisV1.IntReply) error {
-	cl := r.begin("rpush", in.GetKey())
+	cl := r.begin("rpush", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -30,7 +30,7 @@ func (r *rpc) RPush(in *redisV1.RPushRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) LPop(in *redisV1.LPopRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("lpop", in.GetKey())
+	cl := r.begin("lpop", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -39,7 +39,7 @@ func (r *rpc) LPop(in *redisV1.LPopRequest, out *redisV1.BytesListReply) error {
 }
 
 func (r *rpc) RPop(in *redisV1.RPopRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("rpop", in.GetKey())
+	cl := r.begin("rpop", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -56,7 +56,7 @@ func popCount(n int64) int {
 }
 
 func (r *rpc) LRange(in *redisV1.LRangeRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("lrange", in.GetKey())
+	cl := r.begin("lrange", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -65,7 +65,7 @@ func (r *rpc) LRange(in *redisV1.LRangeRequest, out *redisV1.BytesListReply) err
 }
 
 func (r *rpc) LLen(in *redisV1.LLenRequest, out *redisV1.IntReply) error {
-	cl := r.begin("llen", in.GetKey())
+	cl := r.begin("llen", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -74,7 +74,7 @@ func (r *rpc) LLen(in *redisV1.LLenRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) LIndex(in *redisV1.LIndexRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("lindex", in.GetKey())
+	cl := r.begin("lindex", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -83,7 +83,7 @@ func (r *rpc) LIndex(in *redisV1.LIndexRequest, out *redisV1.BytesReply) error {
 }
 
 func (r *rpc) LSet(in *redisV1.LSetRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("lset", in.GetKey())
+	cl := r.begin("lset", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -92,7 +92,7 @@ func (r *rpc) LSet(in *redisV1.LSetRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) LRem(in *redisV1.LRemRequest, out *redisV1.IntReply) error {
-	cl := r.begin("lrem", in.GetKey())
+	cl := r.begin("lrem", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -101,7 +101,7 @@ func (r *rpc) LRem(in *redisV1.LRemRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) LTrim(in *redisV1.LTrimRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("ltrim", in.GetKey())
+	cl := r.begin("ltrim", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -110,7 +110,7 @@ func (r *rpc) LTrim(in *redisV1.LTrimRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) LMove(in *redisV1.LMoveRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("lmove", in.GetSource(), in.GetDestination())
+	cl := r.begin("lmove", in.GetConnection(), in.GetSource(), in.GetDestination())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

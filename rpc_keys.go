@@ -7,7 +7,7 @@ import (
 )
 
 func (r *rpc) Del(in *redisV1.DelRequest, out *redisV1.IntReply) error {
-	cl := r.begin("del")
+	cl := r.begin("del", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -19,7 +19,7 @@ func (r *rpc) Del(in *redisV1.DelRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Unlink(in *redisV1.UnlinkRequest, out *redisV1.IntReply) error {
-	cl := r.begin("unlink")
+	cl := r.begin("unlink", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -31,7 +31,7 @@ func (r *rpc) Unlink(in *redisV1.UnlinkRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Exists(in *redisV1.ExistsRequest, out *redisV1.IntReply) error {
-	cl := r.begin("exists")
+	cl := r.begin("exists", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -43,7 +43,7 @@ func (r *rpc) Exists(in *redisV1.ExistsRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Expire(in *redisV1.ExpireRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("expire", in.GetKey())
+	cl := r.begin("expire", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -52,7 +52,7 @@ func (r *rpc) Expire(in *redisV1.ExpireRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) PExpire(in *redisV1.PExpireRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("pexpire", in.GetKey())
+	cl := r.begin("pexpire", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -61,7 +61,7 @@ func (r *rpc) PExpire(in *redisV1.PExpireRequest, out *redisV1.BoolReply) error 
 }
 
 func (r *rpc) ExpireAt(in *redisV1.ExpireAtRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("expireat", in.GetKey())
+	cl := r.begin("expireat", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -70,7 +70,7 @@ func (r *rpc) ExpireAt(in *redisV1.ExpireAtRequest, out *redisV1.BoolReply) erro
 }
 
 func (r *rpc) TTL(in *redisV1.TTLRequest, out *redisV1.IntReply) error {
-	cl := r.begin("ttl", in.GetKey())
+	cl := r.begin("ttl", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -84,7 +84,7 @@ func (r *rpc) TTL(in *redisV1.TTLRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) PTTL(in *redisV1.PTTLRequest, out *redisV1.IntReply) error {
-	cl := r.begin("pttl", in.GetKey())
+	cl := r.begin("pttl", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -107,7 +107,7 @@ func ttlSeconds(d, unit time.Duration) int64 {
 }
 
 func (r *rpc) Persist(in *redisV1.PersistRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("persist", in.GetKey())
+	cl := r.begin("persist", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -116,7 +116,7 @@ func (r *rpc) Persist(in *redisV1.PersistRequest, out *redisV1.BoolReply) error 
 }
 
 func (r *rpc) Type(in *redisV1.TypeRequest, out *redisV1.StringReply) error {
-	cl := r.begin("type", in.GetKey())
+	cl := r.begin("type", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -125,7 +125,7 @@ func (r *rpc) Type(in *redisV1.TypeRequest, out *redisV1.StringReply) error {
 }
 
 func (r *rpc) Rename(in *redisV1.RenameRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("rename", in.GetKey(), in.GetNewKey())
+	cl := r.begin("rename", in.GetConnection(), in.GetKey(), in.GetNewKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -134,7 +134,7 @@ func (r *rpc) Rename(in *redisV1.RenameRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) Scan(in *redisV1.ScanRequest, out *redisV1.ScanReply) error {
-	cl := r.begin("scan")
+	cl := r.begin("scan", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

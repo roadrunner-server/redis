@@ -5,7 +5,7 @@ import (
 )
 
 func (r *rpc) SAdd(in *redisV1.SAddRequest, out *redisV1.IntReply) error {
-	cl := r.begin("sadd", in.GetKey())
+	cl := r.begin("sadd", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -17,7 +17,7 @@ func (r *rpc) SAdd(in *redisV1.SAddRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) SRem(in *redisV1.SRemRequest, out *redisV1.IntReply) error {
-	cl := r.begin("srem", in.GetKey())
+	cl := r.begin("srem", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -29,7 +29,7 @@ func (r *rpc) SRem(in *redisV1.SRemRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) SMembers(in *redisV1.SMembersRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("smembers", in.GetKey())
+	cl := r.begin("smembers", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -38,7 +38,7 @@ func (r *rpc) SMembers(in *redisV1.SMembersRequest, out *redisV1.BytesListReply)
 }
 
 func (r *rpc) SIsMember(in *redisV1.SIsMemberRequest, out *redisV1.BoolReply) error {
-	cl := r.begin("sismember", in.GetKey())
+	cl := r.begin("sismember", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -50,7 +50,7 @@ func (r *rpc) SIsMember(in *redisV1.SIsMemberRequest, out *redisV1.BoolReply) er
 }
 
 func (r *rpc) SMIsMember(in *redisV1.SMIsMemberRequest, out *redisV1.BoolListReply) error {
-	cl := r.begin("smismember", in.GetKey())
+	cl := r.begin("smismember", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -62,7 +62,7 @@ func (r *rpc) SMIsMember(in *redisV1.SMIsMemberRequest, out *redisV1.BoolListRep
 }
 
 func (r *rpc) SCard(in *redisV1.SCardRequest, out *redisV1.IntReply) error {
-	cl := r.begin("scard", in.GetKey())
+	cl := r.begin("scard", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -71,7 +71,7 @@ func (r *rpc) SCard(in *redisV1.SCardRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) SPop(in *redisV1.SPopRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("spop", in.GetKey())
+	cl := r.begin("spop", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -80,7 +80,7 @@ func (r *rpc) SPop(in *redisV1.SPopRequest, out *redisV1.BytesReply) error {
 }
 
 func (r *rpc) SPopN(in *redisV1.SPopNRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("spopn", in.GetKey())
+	cl := r.begin("spopn", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -89,7 +89,7 @@ func (r *rpc) SPopN(in *redisV1.SPopNRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) SRandMember(in *redisV1.SRandMemberRequest, out *redisV1.BytesReply) error {
-	cl := r.begin("srandmember", in.GetKey())
+	cl := r.begin("srandmember", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -98,7 +98,7 @@ func (r *rpc) SRandMember(in *redisV1.SRandMemberRequest, out *redisV1.BytesRepl
 }
 
 func (r *rpc) SRandMemberN(in *redisV1.SRandMemberNRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("srandmembern", in.GetKey())
+	cl := r.begin("srandmembern", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -107,7 +107,7 @@ func (r *rpc) SRandMemberN(in *redisV1.SRandMemberNRequest, out *redisV1.BytesLi
 }
 
 func (r *rpc) SDiff(in *redisV1.SDiffRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sdiff")
+	cl := r.begin("sdiff", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -119,7 +119,7 @@ func (r *rpc) SDiff(in *redisV1.SDiffRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) SInter(in *redisV1.SInterRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sinter")
+	cl := r.begin("sinter", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -131,7 +131,7 @@ func (r *rpc) SInter(in *redisV1.SInterRequest, out *redisV1.BytesListReply) err
 }
 
 func (r *rpc) SUnion(in *redisV1.SUnionRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sunion")
+	cl := r.begin("sunion", in.GetConnection(), in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

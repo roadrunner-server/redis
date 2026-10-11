@@ -8,11 +8,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/extra/redisprometheus/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/redis/v6/conn"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -30,7 +30,8 @@ type Configurer interface {
 type Driver struct {
 	universalClient  redis.UniversalClient
 	tracer           *sdktrace.TracerProvider
-	cfg              *conn.Config
+	log              *slog.Logger
+	cfg              *Config
 	metricsCollector *redisprometheus.Collector
 }
 
@@ -42,6 +43,7 @@ func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *
 	}
 
 	d := &Driver{
+		log:    log,
 		tracer: tracer,
 	}
 
@@ -55,9 +57,46 @@ func NewRedisDriver(log *slog.Logger, key string, cfgPlugin Configurer, tracer *
 		return nil, errors.E(op, errors.Errorf("config not found by provided key: %s", key))
 	}
 
-	d.universalClient, err = conn.NewClient(d.cfg, log)
+	d.cfg.InitDefaults()
+
+	tlsConfig, err := tlsConfig(d.cfg.TLSConfig)
 	if err != nil {
 		return nil, errors.E(op, err)
+	}
+
+	d.universalClient = redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs:            d.cfg.Addrs,
+		DB:               d.cfg.DB,
+		Username:         d.cfg.Username,
+		Password:         d.cfg.Password,
+		SentinelUsername: d.cfg.SentinelUsername,
+		SentinelPassword: d.cfg.SentinelPassword,
+		MaxRetries:       d.cfg.MaxRetries,
+		MinRetryBackoff:  d.cfg.MinRetryBackoff,
+		MaxRetryBackoff:  d.cfg.MaxRetryBackoff,
+		DialTimeout:      d.cfg.DialTimeout,
+		ReadTimeout:      d.cfg.ReadTimeout,
+		WriteTimeout:     d.cfg.WriteTimeout,
+		PoolSize:         d.cfg.PoolSize,
+		MinIdleConns:     d.cfg.MinIdleConns,
+		ConnMaxLifetime:  d.cfg.MaxConnAge,
+		PoolTimeout:      d.cfg.PoolTimeout,
+		ConnMaxIdleTime:  d.cfg.IdleTimeout,
+		ReadOnly:         d.cfg.ReadOnly,
+		RouteByLatency:   d.cfg.RouteByLatency,
+		RouteRandomly:    d.cfg.RouteRandomly,
+		MasterName:       d.cfg.MasterName,
+		TLSConfig:        tlsConfig,
+	})
+
+	err = redisotel.InstrumentMetrics(d.universalClient)
+	if err != nil {
+		d.log.Warn("failed to instrument redis metrics, driver will work without metrics", "error", err)
+	}
+
+	err = redisotel.InstrumentTracing(d.universalClient)
+	if err != nil {
+		d.log.Warn("failed to instrument redis tracing, driver will work without tracing", "error", err)
 	}
 
 	d.metricsCollector = redisprometheus.NewCollector("rr", "redis", d.universalClient)
@@ -310,6 +349,11 @@ func (d *Driver) Stop(_ context.Context) {
 
 func (d *Driver) MetricsCollector() *redisprometheus.Collector {
 	return d.metricsCollector
+}
+
+// Client returns the Redis client of the storage.
+func (d *Driver) Client() redis.UniversalClient {
+	return d.universalClient
 }
 
 func strToBytes(data string) []byte {

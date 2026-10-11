@@ -10,13 +10,16 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 	redisV1 "github.com/roadrunner-server/api-go/v6/redis/v1"
-	"github.com/roadrunner-server/redis/v6"
-	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
 
-const redisAddr = "127.0.0.1:16379"
+const (
+	// connDefault and connSecond are KV storage names from the test config.
+	connDefault = "redis-rr"
+	connSecond  = "redis-second"
+	redisAddr   = "127.0.0.1:16379"
+)
 
 // rdb talks to the test server directly for setup and verification, so the
 // expectations do not depend on the RPC under test.
@@ -32,7 +35,7 @@ func rdb(t *testing.T) *goredis.Client {
 func bootRedis(t *testing.T) *rpc.Client {
 	t.Helper()
 
-	helpers.Start(t, "configs/.rr-redis-rpc.yaml", []any{&redis.Plugin{}, &rpcPlugin.Plugin{}}, helpers.WithTCPProbe(rpcAddr))
+	helpers.Start(t, "configs/.rr-redis-rpc.yaml", redisPlugins(), helpers.WithTCPProbe(rpcAddr))
 
 	return helpers.NewRPCClient(t, rpcAddr)
 }
@@ -105,13 +108,18 @@ func bs(s ...string) [][]byte {
 	return out
 }
 
-// TestWithoutSection pins the error for a server that has no redis section:
-// the RPC service is registered, but every call must say so.
-func TestWithoutSection(t *testing.T) {
-	helpers.Start(t, "configs/.rr-redis-rpc-none.yaml", []any{&redis.Plugin{}, &rpcPlugin.Plugin{}}, helpers.WithTCPProbe(rpcAddr))
-	client := helpers.NewRPCClient(t, rpcAddr)
+// TestConnectionRouting pins the connection lookup: a request names a KV
+// storage, and a name that is not a storage is an error.
+func TestConnectionRouting(t *testing.T) {
+	client := bootRedis(t)
+	require.NoError(t, rdb(t).FlushAll(t.Context()).Err())
 
-	err := client.Call("redis.Get", &redisV1.GetRequest{Key: "k"}, &redisV1.BytesReply{})
+	require.NoError(t, client.Call("redis.Set", &redisV1.SetRequest{Connection: connDefault, Key: "k", Value: b("v")}, &redisV1.BoolReply{}))
 
-	require.ErrorContains(t, err, "redis section is not configured")
+	out := &redisV1.BytesReply{}
+	require.NoError(t, client.Call("redis.Get", &redisV1.GetRequest{Connection: connSecond, Key: "k"}, out))
+	require.Nil(t, out.Value, "db 1 must not see a key written to db 0")
+
+	require.ErrorContains(t, client.Call("redis.Get", &redisV1.GetRequest{Connection: "nope", Key: "k"}, out), "no such connection: nope")
+	require.ErrorContains(t, client.Call("redis.Get", &redisV1.GetRequest{Key: "k"}, out), "no connection provided")
 }

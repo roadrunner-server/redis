@@ -1,4 +1,4 @@
-package conn
+package kv
 
 import (
 	"crypto/tls"

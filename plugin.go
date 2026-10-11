@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +12,6 @@ import (
 	"github.com/roadrunner-server/api-plugins/v6/kv"
 	"github.com/roadrunner-server/endure/v2/dep"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/redis/v6/conn"
 	rkv "github.com/roadrunner-server/redis/v6/kv"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -41,53 +41,17 @@ type Plugin struct {
 	log *slog.Logger
 	// otel tracer
 	tracer *sdktrace.TracerProvider
-	// prometheus metrics of the KV driver
+	// prometheus metrics
 	metricsCollector *redisprometheus.Collector
-	// client of the redis config section, nil without the section
-	client redis.UniversalClient
-	// prometheus metrics of the client
-	clientCollector *redisprometheus.Collector
+	// clients of the KV storages by storage name, used by the RPC service
+	clients map[string]redis.UniversalClient
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
-	const op = errors.Op("redis_plugin_init")
-
 	p.log = log.NamedLogger(PluginName)
 	p.cfgPlugin = cfg
 	p.tracer = sdktrace.NewTracerProvider()
-
-	if !cfg.Has(PluginName) {
-		return nil
-	}
-
-	var c *conn.Config
-	if err := cfg.UnmarshalKey(PluginName, &c); err != nil {
-		return errors.E(op, err)
-	}
-
-	if c == nil {
-		c = &conn.Config{}
-	}
-
-	client, err := conn.NewClient(c, p.log)
-	if err != nil {
-		return errors.E(op, err)
-	}
-
-	p.client = client
-	p.clientCollector = redisprometheus.NewCollector("rr", "redis_rpc", client)
-
-	return nil
-}
-
-func (p *Plugin) Serve() chan error {
-	return make(chan error, 1)
-}
-
-func (p *Plugin) Stop(context.Context) error {
-	if p.client != nil {
-		_ = p.client.Close()
-	}
+	p.clients = make(map[string]redis.UniversalClient)
 
 	return nil
 }
@@ -112,32 +76,36 @@ func (p *Plugin) KvFromConfig(_ context.Context, key string) (kv.Storage, error)
 		return nil, errors.E(op, err)
 	}
 
-	// should not be needed, but to double check
 	p.rwm.Lock()
 	defer p.rwm.Unlock()
 
 	p.metricsCollector = st.MetricsCollector()
+	p.clients[storageName(key)] = st.Client()
 
 	return st, nil
+}
+
+// storageName returns the KV storage name for the config key the KV plugin
+// passes: `kv.<name>.config` for a local config block, `<name>` for a global
+// section.
+func storageName(key string) string {
+	const prefix, suffix = "kv.", ".config"
+	if strings.HasPrefix(key, prefix) && strings.HasSuffix(key, suffix) {
+		return key[len(prefix) : len(key)-len(suffix)]
+	}
+
+	return key
 }
 
 func (p *Plugin) MetricsCollector() []prometheus.Collector {
 	p.rwm.RLock()
 	defer p.rwm.RUnlock()
 
-	out := make([]prometheus.Collector, 0, 2)
-	if p.clientCollector != nil {
-		out = append(out, p.clientCollector)
-	}
-	if p.metricsCollector != nil {
-		out = append(out, p.metricsCollector)
-	}
-
-	if len(out) == 0 {
+	if p.metricsCollector == nil {
 		return nil
 	}
 
-	return out
+	return []prometheus.Collector{p.metricsCollector}
 }
 
 func (p *Plugin) RPC() any {

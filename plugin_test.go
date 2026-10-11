@@ -5,38 +5,30 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/redis/v6/conn"
+	rkv "github.com/roadrunner-server/redis/v6/kv"
 	"github.com/stretchr/testify/require"
 )
 
-// stubConfigurer hands the plugin pre-built configs instead of decoding YAML.
-// cfg answers the KV driver keys, section answers the redis section.
+// stubConfigurer hands the driver a pre-built config instead of decoding YAML.
 type stubConfigurer struct {
 	sections map[string]bool
-	cfg      *conn.Config
-	section  *conn.Config
+	cfg      *rkv.Config
 	err      error
 }
 
 func (s *stubConfigurer) Has(name string) bool { return s.sections[name] }
 
-func (s *stubConfigurer) UnmarshalKey(name string, out any) error {
+func (s *stubConfigurer) UnmarshalKey(_ string, out any) error {
 	if s.err != nil {
 		return s.err
 	}
 
-	p, ok := out.(**conn.Config)
+	p, ok := out.(**rkv.Config)
 	if !ok {
 		return errors.Str("unexpected target type")
 	}
-
-	if name == PluginName {
-		*p = s.section
-	} else {
-		*p = s.cfg
-	}
+	*p = s.cfg
 	return nil
 }
 
@@ -89,7 +81,7 @@ func TestKvFromConfigPropagatesDecodeError(t *testing.T) {
 func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	c := &stubConfigurer{
 		sections: map[string]bool{"kv.redis-rr": true},
-		cfg:      &conn.Config{Addrs: []string{"127.0.0.1:16379"}},
+		cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:16379"}},
 	}
 	p := newPlugin(t, c)
 
@@ -100,50 +92,34 @@ func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	require.Len(t, p.MetricsCollector(), 1, "the driver's collector should be exposed once a storage exists")
 }
 
-func TestInitOpensTheClientFromTheSection(t *testing.T) {
+// TestKvFromConfigRegistersClientByStorageName covers the lookup key of the
+// RPC service: the KV plugin passes a config key, the client is stored under
+// the storage name.
+func TestKvFromConfigRegistersClientByStorageName(t *testing.T) {
 	cases := []struct {
 		name     string
-		section  *conn.Config
-		wantAddr string
+		key      string
+		wantName string
 	}{
-		{
-			name:     "explicit address",
-			section:  &conn.Config{Addrs: []string{"127.0.0.1:16379"}, DB: 1},
-			wantAddr: "127.0.0.1:16379",
-		},
-		{
-			name:     "null section body gets defaults",
-			section:  nil,
-			wantAddr: "127.0.0.1:6379",
-		},
+		{name: "local config block", key: "kv.redis-rr.config", wantName: "redis-rr"},
+		{name: "global section", key: "redis-rr", wantName: "redis-rr"},
+		{name: "prefix without suffix stays as is", key: "kv.redis-rr", wantName: "kv.redis-rr"},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p := newPlugin(t, &stubConfigurer{sections: map[string]bool{PluginName: true}, section: tc.section})
-			t.Cleanup(func() { require.NoError(t, p.Stop(t.Context())) })
+			c := &stubConfigurer{
+				sections: map[string]bool{tc.key: true},
+				cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:16379"}},
+			}
+			p := newPlugin(t, c)
 
-			require.Equal(t, tc.wantAddr, p.client.(*redis.Client).Options().Addr)
-			require.Len(t, p.MetricsCollector(), 1)
+			st, err := p.KvFromConfig(t.Context(), tc.key)
+			require.NoError(t, err)
+			t.Cleanup(func() { st.Stop(t.Context()) })
+
+			require.Contains(t, p.clients, tc.wantName)
+			require.Len(t, p.clients, 1)
 		})
 	}
-}
-
-func TestInitWithoutSectionKeepsNoClient(t *testing.T) {
-	p := newPlugin(t, &stubConfigurer{})
-
-	require.Nil(t, p.client)
-	require.Nil(t, p.MetricsCollector())
-	require.NoError(t, p.Stop(t.Context()))
-}
-
-func TestInitFailsOnUnreadableRootCA(t *testing.T) {
-	c := &stubConfigurer{
-		sections: map[string]bool{PluginName: true},
-		section:  &conn.Config{TLSConfig: &conn.TLSConfig{RootCa: "/nonexistent/ca.crt"}},
-	}
-
-	err := (&Plugin{}).Init(c, discardLogger{})
-
-	require.ErrorContains(t, err, "no such file")
 }

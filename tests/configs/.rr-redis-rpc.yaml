@@ -7,6 +7,15 @@ logs:
   mode: development
   level: debug
 
-redis:
-  addrs:
-    - "127.0.0.1:16379"
+kv:
+  redis-rr:
+    driver: redis
+    config:
+      addrs:
+        - "127.0.0.1:16379"
+  redis-second:
+    driver: redis
+    config:
+      addrs:
+        - "127.0.0.1:16379"
+      db: 1
