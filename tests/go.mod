@@ -2,19 +2,19 @@ module tests
 
 go 1.27
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/redis/go-redis/v9 v9.23.0
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.15
-	github.com/roadrunner-server/config/v6 v6.0.0-beta.4
-	github.com/roadrunner-server/endure/v2 v2.6.2
-	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3
-	github.com/roadrunner-server/kv/v6 v6.0.0-beta.8
-	github.com/roadrunner-server/logger/v6 v6.0.0-beta.4
-	github.com/roadrunner-server/metrics/v6 v6.0.0-beta.7
+	github.com/roadrunner-server/api-go/v6 v6.1.0
+	github.com/roadrunner-server/config/v6 v6.0.0
+	github.com/roadrunner-server/endure/v2 v2.7.0
+	github.com/roadrunner-server/goridge/v4 v4.0.0
+	github.com/roadrunner-server/kv/v6 v6.0.0
+	github.com/roadrunner-server/logger/v6 v6.0.0
+	github.com/roadrunner-server/metrics/v6 v6.0.0
 	github.com/roadrunner-server/redis/v6 v6.0.0
-	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.6
+	github.com/roadrunner-server/rpc/v6 v6.0.0
 	github.com/stretchr/testify v1.12.1
 )
 
@@ -34,16 +34,16 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
-	github.com/prometheus/client_golang v1.24.1 // indirect
+	github.com/prometheus/client_golang v1.25.0 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
-	github.com/prometheus/common v0.72.0 // indirect
+	github.com/prometheus/common v0.72.1 // indirect
 	github.com/prometheus/procfs v0.22.0 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.23.0 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.23.0 // indirect
 	github.com/redis/go-redis/extra/redisprometheus/v9 v9.23.0 // indirect
 	github.com/roadrunner-server/api-plugins/v6 v6.0.0 // indirect
 	github.com/roadrunner-server/errors v1.6.0 // indirect
-	github.com/roadrunner-server/tcplisten v1.6.0 // indirect
+	github.com/roadrunner-server/tcplisten v1.6.1 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
@@ -60,7 +60,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
