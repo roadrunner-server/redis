@@ -70,15 +70,15 @@ func runCases(t *testing.T, client *rpc.Client, cases []rpcCase) {
 			err := client.Call(tc.method, tc.in, tc.out)
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr)
-				return
-			}
-			require.NoError(t, err)
+			} else {
+				require.NoError(t, err)
 
-			if tc.unordered {
-				sortValues(tc.out)
-				sortValues(tc.want)
+				if tc.unordered {
+					sortValues(tc.out)
+					sortValues(tc.want)
+				}
+				require.True(t, proto.Equal(tc.want, tc.out), "want %v, got %v", tc.want, tc.out)
 			}
-			require.True(t, proto.Equal(tc.want, tc.out), "want %v, got %v", tc.want, tc.out)
 
 			if tc.after != nil {
 				got, err := r.Do(t.Context(), tc.after...).Result()
@@ -122,4 +122,20 @@ func TestConnectionRouting(t *testing.T) {
 
 	require.ErrorContains(t, client.Call("redis.Get", &redisV1.GetRequest{Connection: "nope", Key: "k"}, out), "no such connection: nope")
 	require.ErrorContains(t, client.Call("redis.Get", &redisV1.GetRequest{Key: "k"}, out), "no connection provided")
+}
+
+func TestMissingConnection(t *testing.T) {
+	client := bootRedis(t)
+
+	runCases(t, client, []rpcCase{
+		{name: "mget", method: "redis.MGet", in: &redisV1.MGetRequest{Keys: []string{"k"}}, out: &redisV1.BytesListReply{}, wantErr: "no connection provided"},
+		{name: "mset", method: "redis.MSet", in: &redisV1.MSetRequest{Values: map[string][]byte{"k": b("v")}}, out: &redisV1.Empty{}, wantErr: "no connection provided"},
+		{name: "del", method: "redis.Del", in: &redisV1.DelRequest{Keys: []string{"k"}}, out: &redisV1.IntReply{}, wantErr: "no connection provided"},
+		{name: "unlink", method: "redis.Unlink", in: &redisV1.UnlinkRequest{Keys: []string{"k"}}, out: &redisV1.IntReply{}, wantErr: "no connection provided"},
+		{name: "exists", method: "redis.Exists", in: &redisV1.ExistsRequest{Keys: []string{"k"}}, out: &redisV1.IntReply{}, wantErr: "no connection provided"},
+		{name: "scan", method: "redis.Scan", in: &redisV1.ScanRequest{}, out: &redisV1.ScanReply{}, wantErr: "no connection provided"},
+		{name: "sdiff", method: "redis.SDiff", in: &redisV1.SDiffRequest{Keys: []string{"k"}}, out: &redisV1.BytesListReply{}, wantErr: "no connection provided"},
+		{name: "sinter", method: "redis.SInter", in: &redisV1.SInterRequest{Keys: []string{"k"}}, out: &redisV1.BytesListReply{}, wantErr: "no connection provided"},
+		{name: "sunion", method: "redis.SUnion", in: &redisV1.SUnionRequest{Keys: []string{"k"}}, out: &redisV1.BytesListReply{}, wantErr: "no connection provided"},
+	})
 }
