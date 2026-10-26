@@ -25,8 +25,8 @@ github.com/prometheus/client_model v0.6.3 h1:O0jaTVAYNxTHYInEPFJt5I3+sN8zqBtVMPT
 github.com/prometheus/client_model v0.6.3/go.mod h1:gpN5P9S7Rr6Yr92PiQ+Ixvhf6JZEkF1dnxsYL2aPBEM=
 github.com/prometheus/common v0.72.1 h1:ZAiQed/nk8IIcsdzb2TlJu23NEUDyDLQ9TXTN2WRK6Y=
 github.com/prometheus/common v0.72.1/go.mod h1:1IoBY4IRaJnhs2ESjNzjilP1cJ/P8pimGoomq7zRXrA=
-github.com/prometheus/procfs v0.22.0 h1:6q9+/JL9IKAPbCmBrv9n5O5Ty3NKnciV5X7YGw0oics=
-github.com/prometheus/procfs v0.22.0/go.mod h1:CvmFr/GVhIjIvWJZW3tgkODBQMRIf0EyWMQLHCHab58=
+github.com/prometheus/procfs v0.23.0 h1:ad+S6FTkzwaMgacKLM5h6bNKExS+DMH0YiUwXItH/o4=
+github.com/prometheus/procfs v0.23.0/go.mod h1:3AVXO0FqLafyYFU/V/IQRZlC8Rgqz8Dm/x6pKLK+RIk=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.23.0 h1:YOQCtePRR/cBrxtZB5u2ueYei3zGJm1n0KB2tvth0k0=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.23.0/go.mod h1:BzBb5fEjIwijUn8VVkXfQUwFTGyk2vGIVU19zv2GhsM=
 github.com/redis/go-redis/extra/redisotel/v9 v9.23.0 h1:EBQ01zUjwarZZ4IoSTQNU9EEc223eB9tpSun6n5EaUU=
