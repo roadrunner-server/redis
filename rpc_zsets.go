@@ -8,13 +8,22 @@ import (
 	"github.com/roadrunner-server/errors"
 )
 
-var errByScoreByLex = stderr.New("by_score and by_lex are mutually exclusive")
+var (
+	errByScoreByLex = stderr.New("by_score and by_lex are mutually exclusive")
+	errGtLtNx       = stderr.New("gt, lt and nx are mutually exclusive")
+)
 
 func (r *rpc) ZAdd(in *redisV1.ZAddRequest, out *redisV1.IntReply) error {
 	cl := r.begin("zadd", in.GetConnection(), in.GetKey())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
+	}
+	if in.GetNx() && in.GetXx() {
+		return cl.fail(errNxXx)
+	}
+	if (in.GetGt() && in.GetLt()) || (in.GetNx() && (in.GetGt() || in.GetLt())) {
+		return cl.fail(errGtLtNx)
 	}
 	if len(in.GetMembers()) == 0 {
 		return cl.fail(errors.E(errors.NoKeys))

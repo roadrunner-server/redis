@@ -7,7 +7,7 @@ import (
 )
 
 func (r *rpc) Del(in *redisV1.DelRequest, out *redisV1.IntReply) error {
-	cl := r.begin("del", in.GetConnection(), in.GetConnection())
+	cl := r.begin("del", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -19,7 +19,7 @@ func (r *rpc) Del(in *redisV1.DelRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Unlink(in *redisV1.UnlinkRequest, out *redisV1.IntReply) error {
-	cl := r.begin("unlink", in.GetConnection(), in.GetConnection())
+	cl := r.begin("unlink", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -31,7 +31,7 @@ func (r *rpc) Unlink(in *redisV1.UnlinkRequest, out *redisV1.IntReply) error {
 }
 
 func (r *rpc) Exists(in *redisV1.ExistsRequest, out *redisV1.IntReply) error {
-	cl := r.begin("exists", in.GetConnection(), in.GetConnection())
+	cl := r.begin("exists", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -134,7 +134,7 @@ func (r *rpc) Rename(in *redisV1.RenameRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) Scan(in *redisV1.ScanRequest, out *redisV1.ScanReply) error {
-	cl := r.begin("scan", in.GetConnection(), in.GetConnection())
+	cl := r.begin("scan", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

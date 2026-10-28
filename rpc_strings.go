@@ -67,7 +67,7 @@ func (r *rpc) Set(in *redisV1.SetRequest, out *redisV1.BoolReply) error {
 }
 
 func (r *rpc) MGet(in *redisV1.MGetRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("mget", in.GetConnection(), in.GetConnection())
+	cl := r.begin("mget", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -79,7 +79,7 @@ func (r *rpc) MGet(in *redisV1.MGetRequest, out *redisV1.BytesListReply) error {
 }
 
 func (r *rpc) MSet(in *redisV1.MSetRequest, _ *redisV1.Empty) error {
-	cl := r.begin("mset", in.GetConnection(), in.GetConnection())
+	cl := r.begin("mset", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err

@@ -107,7 +107,7 @@ func (r *rpc) SRandMemberN(in *redisV1.SRandMemberNRequest, out *redisV1.BytesLi
 }
 
 func (r *rpc) SDiff(in *redisV1.SDiffRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sdiff", in.GetConnection(), in.GetConnection())
+	cl := r.begin("sdiff", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -119,7 +119,7 @@ func (r *rpc) SDiff(in *redisV1.SDiffRequest, out *redisV1.BytesListReply) error
 }
 
 func (r *rpc) SInter(in *redisV1.SInterRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sinter", in.GetConnection(), in.GetConnection())
+	cl := r.begin("sinter", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
@@ -131,7 +131,7 @@ func (r *rpc) SInter(in *redisV1.SInterRequest, out *redisV1.BytesListReply) err
 }
 
 func (r *rpc) SUnion(in *redisV1.SUnionRequest, out *redisV1.BytesListReply) error {
-	cl := r.begin("sunion", in.GetConnection(), in.GetConnection())
+	cl := r.begin("sunion", in.GetConnection())
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
