@@ -351,6 +351,11 @@ func (d *Driver) MetricsCollector() *redisprometheus.Collector {
 	return d.metricsCollector
 }
 
+// Client returns the Redis client of the storage.
+func (d *Driver) Client() redis.UniversalClient {
+	return d.universalClient
+}
+
 func strToBytes(data string) []byte {
 	if data == "" {
 		return nil

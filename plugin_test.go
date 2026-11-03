@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
+	redisV1 "github.com/roadrunner-server/api-go/v6/redis/v1"
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v6/kv"
 	"github.com/stretchr/testify/require"
@@ -90,4 +91,55 @@ func TestKvFromConfigBuildsDriverAndRegistersCollector(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, st)
 	require.Len(t, p.MetricsCollector(), 1, "the driver's collector should be exposed once a storage exists")
+}
+
+// TestKvFromConfigRegistersClientByStorageName covers the lookup key of the
+// RPC service: the KV plugin passes a config key, the client is stored under
+// the storage name.
+func TestKvFromConfigRegistersClientByStorageName(t *testing.T) {
+	cases := []struct {
+		name     string
+		key      string
+		wantName string
+	}{
+		{name: "local config block", key: "kv.redis-rr.config", wantName: "redis-rr"},
+		{name: "global section", key: "redis-rr", wantName: "redis-rr"},
+		{name: "prefix without suffix stays as is", key: "kv.redis-rr", wantName: "kv.redis-rr"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := &stubConfigurer{
+				sections: map[string]bool{tc.key: true},
+				cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:16379"}},
+			}
+			p := newPlugin(t, c)
+
+			st, err := p.KvFromConfig(t.Context(), tc.key)
+			require.NoError(t, err)
+			t.Cleanup(func() { st.Stop(t.Context()) })
+
+			require.Contains(t, p.clients, tc.wantName)
+			require.Len(t, p.clients, 1)
+		})
+	}
+}
+
+// TestScanRejectsClusterConnection covers SCAN on a storage with several
+// addrs: go-redis builds a cluster client and sends each keyless SCAN to the
+// next master, so a cursor from one node reaches another node.
+func TestScanRejectsClusterConnection(t *testing.T) {
+	c := &stubConfigurer{
+		sections: map[string]bool{"kv.redis-cluster.config": true},
+		cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:1", "127.0.0.1:2"}},
+	}
+	p := newPlugin(t, c)
+
+	st, err := p.KvFromConfig(t.Context(), "kv.redis-cluster.config")
+	require.NoError(t, err)
+	t.Cleanup(func() { st.Stop(t.Context()) })
+
+	err = p.RPC().(*rpc).Scan(&redisV1.ScanRequest{Connection: "redis-cluster"}, &redisV1.ScanReply{})
+
+	require.ErrorContains(t, err, "scan is not supported on a cluster connection")
 }
