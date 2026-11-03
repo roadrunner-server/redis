@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
+	redisV1 "github.com/roadrunner-server/api-go/v6/redis/v1"
 	"github.com/roadrunner-server/errors"
 	rkv "github.com/roadrunner-server/redis/v6/kv"
 	"github.com/stretchr/testify/require"
@@ -122,4 +123,23 @@ func TestKvFromConfigRegistersClientByStorageName(t *testing.T) {
 			require.Len(t, p.clients, 1)
 		})
 	}
+}
+
+// TestScanRejectsClusterConnection covers SCAN on a storage with several
+// addrs: go-redis builds a cluster client and sends each keyless SCAN to the
+// next master, so a cursor from one node reaches another node.
+func TestScanRejectsClusterConnection(t *testing.T) {
+	c := &stubConfigurer{
+		sections: map[string]bool{"kv.redis-cluster.config": true},
+		cfg:      &rkv.Config{Addrs: []string{"127.0.0.1:1", "127.0.0.1:2"}},
+	}
+	p := newPlugin(t, c)
+
+	st, err := p.KvFromConfig(t.Context(), "kv.redis-cluster.config")
+	require.NoError(t, err)
+	t.Cleanup(func() { st.Stop(t.Context()) })
+
+	err = p.RPC().(*rpc).Scan(&redisV1.ScanRequest{Connection: "redis-cluster"}, &redisV1.ScanReply{})
+
+	require.ErrorContains(t, err, "scan is not supported on a cluster connection")
 }

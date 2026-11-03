@@ -1,10 +1,14 @@
 package redis
 
 import (
+	stderr "errors"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	redisV1 "github.com/roadrunner-server/api-go/v6/redis/v1"
 )
+
+var errScanCluster = stderr.New("scan is not supported on a cluster connection")
 
 func (r *rpc) Del(in *redisV1.DelRequest, out *redisV1.IntReply) error {
 	cl := r.begin("del", in.GetConnection())
@@ -138,6 +142,10 @@ func (r *rpc) Scan(in *redisV1.ScanRequest, out *redisV1.ScanReply) error {
 	defer cl.end()
 	if cl.err != nil {
 		return cl.err
+	}
+	// SCAN iterates the keys of one node, and the cluster client sends each keyless call to the next master.
+	if _, ok := cl.c.(*redis.ClusterClient); ok {
+		return cl.fail(errScanCluster)
 	}
 	keys, cursor, err := cl.c.ScanType(cl.ctx, in.GetCursor(), in.GetMatch(), in.GetCount(), in.GetType()).Result()
 	if err != nil {
