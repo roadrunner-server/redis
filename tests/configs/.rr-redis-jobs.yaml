@@ -1,0 +1,21 @@
+version: '3'
+
+redis:
+  addrs: ["${RR_REDIS_JOBS_ADDR:-127.0.0.1:16379}"]
+  db: 2
+
+kv:
+  cache:
+    driver: redis
+    config:
+      addrs: ["${RR_REDIS_JOBS_ADDR:-127.0.0.1:16379}"]
+      db: 0
+
+jobs:
+  pipelines:
+    mail:
+      driver: redis
+      config:
+        queue: "${RR_TEST_QUEUE}"
+        priority: 5
+        visibility_timeout: 1s

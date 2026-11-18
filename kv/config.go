@@ -1,7 +1,11 @@
 package kv
 
 import (
+	"log/slog"
 	"time"
+
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 type Config struct {
@@ -35,4 +39,29 @@ func (s *Config) InitDefaults() {
 	if s.Addrs == nil {
 		s.Addrs = []string{"127.0.0.1:6379"} // default addr is pointing to local storage
 	}
+}
+
+// NewClient opens a client for one KV storage or Jobs pipeline.
+func (s *Config) NewClient(log *slog.Logger) (redis.UniversalClient, error) {
+	s.InitDefaults()
+	tls, err := tlsConfig(s.TLSConfig)
+	if err != nil {
+		return nil, err
+	}
+	client := redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs: s.Addrs, DB: s.DB, Username: s.Username, Password: s.Password,
+		SentinelUsername: s.SentinelUsername, SentinelPassword: s.SentinelPassword, MasterName: s.MasterName,
+		MaxRetries: s.MaxRetries, MinRetryBackoff: s.MinRetryBackoff, MaxRetryBackoff: s.MaxRetryBackoff,
+		DialTimeout: s.DialTimeout, ReadTimeout: s.ReadTimeout, WriteTimeout: s.WriteTimeout,
+		PoolSize: s.PoolSize, MinIdleConns: s.MinIdleConns, ConnMaxLifetime: s.MaxConnAge,
+		PoolTimeout: s.PoolTimeout, ConnMaxIdleTime: s.IdleTimeout, ReadOnly: s.ReadOnly,
+		RouteByLatency: s.RouteByLatency, RouteRandomly: s.RouteRandomly, TLSConfig: tls,
+	})
+	if err := redisotel.InstrumentMetrics(client); err != nil {
+		log.Warn("failed to instrument redis metrics, driver will work without metrics", "error", err)
+	}
+	if err := redisotel.InstrumentTracing(client); err != nil {
+		log.Warn("failed to instrument redis tracing, driver will work without tracing", "error", err)
+	}
+	return client, nil
 }

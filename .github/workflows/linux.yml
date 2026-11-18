@@ -60,7 +60,17 @@ jobs:
           mkdir ./tests/coverage-ci
           go test -timeout 5m -v -race -cover -tags=debug -coverpkg=./... -coverprofile=./tests/coverage-ci/redis_unit.out -covermode=atomic ./...
 
+      - name: Start Redis Cluster
+        run: |
+          for port in 17300 17301 17302; do
+            mkdir "$RUNNER_TEMP/redis-$port"
+            redis-server --port "$port" --dir "$RUNNER_TEMP/redis-$port" --cluster-enabled yes --daemonize yes
+          done
+          redis-cli --cluster create 127.0.0.1:17300 127.0.0.1:17301 127.0.0.1:17302 --cluster-replicas 0 --cluster-yes
+
       - name: Run golang tests with coverage
+        env:
+          RR_REDIS_TEST_CLUSTER: 127.0.0.1:17300,127.0.0.1:17301,127.0.0.1:17302
         run: |
           cd tests
           redis-server --tls-port 16380 --port 16379 --tls-cert-file certs/server.crt --tls-key-file certs/server.key --tls-ca-cert-file certs/ca.crt --daemonize yes
@@ -85,6 +95,22 @@ jobs:
         with:
           name: coverage
           path: ./tests/coverage-ci
+
+  redis_jobs_minimum:
+    name: Jobs on Redis 8.0
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8.0
+        ports: ["16379:6379"]
+        options: --init --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 2s --health-retries 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - run: go test -race -timeout 5m -run '^TestRedisJobs' .
+        working-directory: tests
 
   codecov:
     name: Upload codecov
