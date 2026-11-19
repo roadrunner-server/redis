@@ -221,15 +221,19 @@ func (d *Driver) Stop(ctx context.Context) error {
 	return errors.Join(err, d.retire(ctx), d.client.Close())
 }
 
+// DELCONSUMER also removes its pending entries. https://redis.io/docs/latest/commands/xgroup-delconsumer/
+const retireConsumer = `
+local function retire(consumer)
+  if #redis.call('XPENDING', KEYS[1], ARGV[1], '-', '+', 1, consumer) ~= 0 then return 0 end
+  return redis.pcall('XGROUP', 'DELCONSUMER', KEYS[1], ARGV[1], consumer)
+end
+`
+
 func (d *Driver) retire(ctx context.Context) error {
 	if d.consumer == "" || ctx.Err() != nil {
 		return nil
 	}
-	// DELCONSUMER also removes its pending entries. https://redis.io/docs/latest/commands/xgroup-delconsumer/
-	const retire = `
-if #redis.call('XPENDING', KEYS[1], ARGV[1], '-', '+', 1, ARGV[2]) ~= 0 then return 0 end
-return redis.call('XGROUP', 'DELCONSUMER', KEYS[1], ARGV[1], ARGV[2])`
-	err := d.client.Eval(ctx, retire, []string{d.stream}, group, d.consumer).Err()
+	err := d.client.Eval(ctx, retireConsumer+`return retire(ARGV[2])`, []string{d.stream}, group, d.consumer).Err()
 	if redis.HasErrorPrefix(err, "NOGROUP") {
 		return nil
 	}

@@ -114,13 +114,18 @@ func TestRedisJobsRetireConsumer(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := privateRedis(t)
 			t.Setenv("RR_REDIS_JOBS_ADDR", c.Options().Addr)
-			cfg := redisjobs.Config{Queue: "mail", Prefetch: 1, VisibilityTimeout: 100 * time.Millisecond}
+			cfg := redisjobs.Config{Queue: "mail", Prefetch: 2, VisibilityTimeout: 100 * time.Millisecond}
 			d, q := jobsDriver(t, cfg, nil)
 			ctx := t.Context()
 			require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "work", Job: "mail"}))
+			if tc.pending {
+				require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "next", Job: "mail"}))
+			}
 			require.NoError(t, d.Resume(ctx, "mail"))
 			i := takeJob(t, q)
-			if !tc.pending {
+			if tc.pending {
+				takeJob(t, q)
+			} else {
 				require.NoError(t, i.Ack())
 			}
 			require.NoError(t, d.Stop(ctx))
@@ -131,12 +136,19 @@ func TestRedisJobsRetireConsumer(t *testing.T) {
 				return
 			}
 			require.Len(t, consumers, 1)
-			require.EqualValues(t, 1, consumers[0].Pending)
+			require.EqualValues(t, 2, consumers[0].Pending)
+			cfg.Prefetch = 1
 			b, next := jobsDriver(t, cfg, nil)
 			require.NoError(t, b.Resume(ctx, "mail"))
-			recovered := takeJob(t, next)
-			require.Equal(t, "work", recovered.ID())
-			require.NoError(t, recovered.Ack())
+			first := takeJob(t, next)
+			require.NoError(t, first.Ack())
+			second := takeJob(t, next)
+			require.ElementsMatch(t, []string{"work", "next"}, []string{first.ID(), second.ID()})
+			require.NoError(t, second.Ack())
+			require.NoError(t, b.Stop(ctx))
+			consumers, err = c.XInfoConsumers(ctx, "rr:jobs:{mail}:ready", "roadrunner").Result()
+			require.NoError(t, err)
+			require.Empty(t, consumers)
 		})
 	}
 }

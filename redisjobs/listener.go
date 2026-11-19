@@ -88,7 +88,7 @@ return #due`
 func (d *Driver) claim(ctx context.Context, scan *pendingScan) (*item, error) {
 	// Use the pending tail at the start of each scan. https://redis.io/docs/latest/commands/xpending/
 	// XCLAIM increments the delivery count on the primary. https://redis.io/docs/latest/commands/xclaim/
-	const claim = `
+	const claim = retireConsumer + `
 local start, tail = '-', ARGV[5]
 if tail == '' then
   tail = redis.call('XPENDING', KEYS[1], ARGV[1])[3]
@@ -100,7 +100,10 @@ local page = redis.call('XPENDING', KEYS[1], ARGV[1], start, tail, 10)
 for _, p in ipairs(page) do
   if p[3] >= tonumber(ARGV[3]) then
     local m = redis.call('XCLAIM', KEYS[1], ARGV[1], ARGV[2], ARGV[3], p[1])[1]
-    if m then return {p[1], tail, tostring(p[4] + 1), m[2][2]} end
+    if m then
+      if p[2] ~= ARGV[2] then retire(p[2]) end
+      return {p[1], tail, tostring(p[4] + 1), m[2][2]}
+    end
   end
 end
 if #page == 10 then return {page[10][1], tail} end
