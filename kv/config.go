@@ -2,6 +2,7 @@ package kv
 
 import (
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
@@ -41,8 +42,16 @@ func (s *Config) InitDefaults() {
 	}
 }
 
+// Client owns a Redis connection pool and its metrics registration.
+type Client struct {
+	redis.UniversalClient
+	close func() error
+}
+
+func (c *Client) Close() error { return c.close() }
+
 // NewClient opens a client for one KV storage or Jobs pipeline.
-func (s *Config) NewClient(log *slog.Logger) (redis.UniversalClient, error) {
+func (s *Config) NewClient(log *slog.Logger) (*Client, error) {
 	s.InitDefaults()
 	tls, err := tlsConfig(s.TLSConfig)
 	if err != nil {
@@ -57,11 +66,15 @@ func (s *Config) NewClient(log *slog.Logger) (redis.UniversalClient, error) {
 		PoolTimeout: s.PoolTimeout, ConnMaxIdleTime: s.IdleTimeout, ReadOnly: s.ReadOnly,
 		RouteByLatency: s.RouteByLatency, RouteRandomly: s.RouteRandomly, TLSConfig: tls,
 	})
-	if err := redisotel.InstrumentMetrics(client); err != nil {
+	done := make(chan struct{})
+	if err := redisotel.InstrumentMetrics(client, redisotel.WithCloseChan(done)); err != nil {
 		log.Warn("failed to instrument redis metrics, driver will work without metrics", "error", err)
 	}
 	if err := redisotel.InstrumentTracing(client); err != nil {
 		log.Warn("failed to instrument redis tracing, driver will work without tracing", "error", err)
 	}
-	return client, nil
+	return &Client{UniversalClient: client, close: sync.OnceValue(func() error {
+		close(done)
+		return client.Close()
+	})}, nil
 }

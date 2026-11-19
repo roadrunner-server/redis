@@ -101,3 +101,42 @@ func TestRedisJobsClaimWithReplicaLag(t *testing.T) {
 	require.Zero(t, s.Active)
 	require.Zero(t, s.Reserved)
 }
+
+func TestRedisJobsRetireConsumer(t *testing.T) {
+	cases := []struct {
+		name    string
+		pending bool
+	}{
+		{name: "remove consumer after acknowledgment"},
+		{name: "keep consumer until pending delivery can be claimed", pending: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := privateRedis(t)
+			t.Setenv("RR_REDIS_JOBS_ADDR", c.Options().Addr)
+			cfg := redisjobs.Config{Queue: "mail", Prefetch: 1, VisibilityTimeout: 100 * time.Millisecond}
+			d, q := jobsDriver(t, cfg, nil)
+			ctx := t.Context()
+			require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "work", Job: "mail"}))
+			require.NoError(t, d.Resume(ctx, "mail"))
+			i := takeJob(t, q)
+			if !tc.pending {
+				require.NoError(t, i.Ack())
+			}
+			require.NoError(t, d.Stop(ctx))
+			consumers, err := c.XInfoConsumers(ctx, "rr:jobs:{mail}:ready", "roadrunner").Result()
+			require.NoError(t, err)
+			if !tc.pending {
+				require.Empty(t, consumers)
+				return
+			}
+			require.Len(t, consumers, 1)
+			require.EqualValues(t, 1, consumers[0].Pending)
+			b, next := jobsDriver(t, cfg, nil)
+			require.NoError(t, b.Resume(ctx, "mail"))
+			recovered := takeJob(t, next)
+			require.Equal(t, "work", recovered.ID())
+			require.NoError(t, recovered.Ack())
+		})
+	}
+}

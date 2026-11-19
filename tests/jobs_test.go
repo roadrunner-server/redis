@@ -90,7 +90,11 @@ func jobsDriver(t *testing.T, cfg redisjobs.Config, hook goredis.Hook) (api.Driv
 	q := priorityqueue.NewBinHeap[api.Job](10)
 	d, err := redisjobs.New(t.Context(), client, slog.Default(), q, "mail", cfg)
 	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, d.Stop(context.Background())) })
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		require.NoError(t, d.Stop(ctx))
+	})
 	return d, q
 }
 

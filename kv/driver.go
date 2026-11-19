@@ -27,7 +27,7 @@ type Configurer interface {
 }
 
 type Driver struct {
-	universalClient  redis.UniversalClient
+	universalClient  *Client
 	tracer           *sdktrace.TracerProvider
 	metricsCollector *redisprometheus.Collector
 }
@@ -296,7 +296,6 @@ func (d *Driver) Clear(_ context.Context) error {
 }
 
 func (d *Driver) Stop(_ context.Context) {
-	// close the connection
 	_ = d.universalClient.Close()
 }
 
@@ -306,7 +305,7 @@ func (d *Driver) MetricsCollector() *redisprometheus.Collector {
 
 // Client returns the Redis client of the storage.
 func (d *Driver) Client() redis.UniversalClient {
-	return d.universalClient
+	return d.universalClient.UniversalClient
 }
 
 func strToBytes(data string) []byte {

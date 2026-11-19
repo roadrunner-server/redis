@@ -1,6 +1,7 @@
 package kv
 
 import (
+	"context"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -18,10 +19,14 @@ func privateRedis(t *testing.T) *redis.Client {
 	t.Helper()
 	dir := t.TempDir()
 	socket := filepath.Join(dir, "r.sock")
-	cmd := exec.CommandContext(t.Context(), "redis-server", "--port", "0", "--unixsocket", socket,
+	ctx, stop := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, "redis-server", "--port", "0", "--unixsocket", socket,
 		"--dir", dir, "--save", "", "--appendonly", "no")
+	t.Cleanup(func() {
+		stop()
+		_ = cmd.Wait()
+	})
 	require.NoError(t, cmd.Start())
-	t.Cleanup(func() { _ = cmd.Wait() })
 	c := redis.NewClient(&redis.Options{Addr: socket, DB: 2, MaxRetries: -1})
 	t.Cleanup(func() { _ = c.Close() })
 	require.Eventually(t, func() bool { return c.Ping(t.Context()).Err() == nil }, 5*time.Second, 10*time.Millisecond)

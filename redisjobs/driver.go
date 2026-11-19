@@ -90,7 +90,7 @@ func New(ctx context.Context, client redis.UniversalClient, log *slog.Logger, q 
 	prefix := "rr:jobs:{" + cfg.Queue + "}:"
 	d := &Driver{
 		client: client, log: log, queue: heap, pipeline: pipeline, cfg: cfg,
-		stream: prefix + "ready", delayed: prefix + "delayed", consumer: rand.Text(), slots: make(chan struct{}, cfg.Prefetch),
+		stream: prefix + "ready", delayed: prefix + "delayed", slots: make(chan struct{}, cfg.Prefetch),
 	}
 	if err := d.ensureGroup(ctx); err != nil {
 		return nil, err
@@ -151,6 +151,9 @@ func (d *Driver) Resume(ctx context.Context, _ string) error {
 	}
 	if err := d.wait(ctx); err != nil {
 		return err
+	}
+	if d.consumer == "" {
+		d.consumer = rand.Text()
 	}
 	run, cancel := context.WithCancel(context.Background())
 	d.cancel, d.done = cancel, make(chan struct{})
@@ -215,7 +218,22 @@ func (d *Driver) Stop(ctx context.Context) error {
 			err = errors.Join(err, ctx.Err())
 		}
 	}
-	return errors.Join(err, d.client.Close())
+	return errors.Join(err, d.retire(ctx), d.client.Close())
+}
+
+func (d *Driver) retire(ctx context.Context) error {
+	if d.consumer == "" || ctx.Err() != nil {
+		return nil
+	}
+	// DELCONSUMER also removes its pending entries. https://redis.io/docs/latest/commands/xgroup-delconsumer/
+	const retire = `
+if #redis.call('XPENDING', KEYS[1], ARGV[1], '-', '+', 1, ARGV[2]) ~= 0 then return 0 end
+return redis.call('XGROUP', 'DELCONSUMER', KEYS[1], ARGV[1], ARGV[2])`
+	err := d.client.Eval(ctx, retire, []string{d.stream}, group, d.consumer).Err()
+	if redis.HasErrorPrefix(err, "NOGROUP") {
+		return nil
+	}
+	return err
 }
 
 func (d *Driver) startWorker() error {
