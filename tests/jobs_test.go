@@ -124,7 +124,9 @@ func TestRedisJobsClusterDelayedDuplicates(t *testing.T) {
 	}
 	s, err := b.State(ctx)
 	require.NoError(t, err)
-	require.Zero(t, s.Active+s.Reserved+s.Delayed)
+	require.Zero(t, s.Active)
+	require.Zero(t, s.Reserved)
+	require.Zero(t, s.Delayed)
 }
 
 func TestRedisJobsNack(t *testing.T) {
@@ -138,7 +140,9 @@ func TestRedisJobsNack(t *testing.T) {
 	require.NoError(t, next.NackWithOptions(false, 0))
 	s, err := d.State(ctx)
 	require.NoError(t, err)
-	require.Zero(t, s.Active+s.Reserved+s.Delayed)
+	require.Zero(t, s.Active)
+	require.Zero(t, s.Reserved)
+	require.Zero(t, s.Delayed)
 }
 
 func takeJob(t *testing.T, q *priorityqueue.BinHeap[api.Job]) api.Job {
@@ -167,23 +171,104 @@ func TestRedisJobsStaleDelivery(t *testing.T) {
 	state, err := a.State(ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, state.Active)
-	require.Zero(t, state.Reserved+state.Delayed)
+	require.Zero(t, state.Reserved)
+	require.Zero(t, state.Delayed)
 	require.NoError(t, current.Ack())
 }
 
 func TestRedisJobsAutoAck(t *testing.T) {
-	d, q := jobsDriver(t, redisjobs.Config{Queue: rand.Text()}, nil)
+	name := rand.Text()
+	d, q := jobsDriver(t, redisjobs.Config{Queue: name}, nil)
 	ctx := t.Context()
-	require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "auto", Job: "mail", Options: &jobs.Options{AutoAck: true}}))
+	require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "auto", Job: "mail", Hdr: map[string][]string{"tags": {"one", "two"}}, Options: &jobs.Options{AutoAck: true}}))
 	require.NoError(t, d.Resume(ctx, "mail"))
 	item := takeJob(t, q)
+	info, err := item.Context()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"id":"auto","job":"mail","driver":"redis","pipeline":"mail","queue":"`+name+`","headers":{"tags":["one","two"]}}`, string(info))
 	state, err := d.State(ctx)
 	require.NoError(t, err)
-	require.Zero(t, state.Active+state.Reserved)
-	require.NoError(t, item.Requeue(nil, 1))
+	require.Zero(t, state.Active)
+	require.Zero(t, state.Reserved)
+	require.ErrorContains(t, item.Requeue(nil, 1), "auto-ack")
 	state, err = d.State(ctx)
 	require.NoError(t, err)
 	require.Zero(t, state.Delayed)
+}
+
+func TestRedisJobsPauseKeepsAutoAckDelivery(t *testing.T) {
+	d, q := jobsDriver(t, redisjobs.Config{Queue: rand.Text(), Prefetch: 11, VisibilityTimeout: 300 * time.Millisecond}, nil)
+	ctx := t.Context()
+	for range 10 {
+		require.NoError(t, d.Push(ctx, &jobs.Job{Ident: rand.Text(), Job: "fill"}))
+	}
+	require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "blocked", Job: "mail", Options: &jobs.Options{AutoAck: true}}))
+	require.NoError(t, d.Resume(ctx, "mail"))
+	require.Eventually(t, func() bool {
+		s, err := d.State(ctx)
+		return err == nil && s.Reserved == 0 && q.Len() == 10
+	}, 3*time.Second, 5*time.Millisecond)
+	require.NoError(t, d.Pause(ctx, "mail"))
+	s, err := d.State(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, 11, s.Active, "the blocked job must remain recoverable")
+	for range 10 {
+		require.NoError(t, q.ExtractMin().Ack())
+	}
+	require.NoError(t, d.Resume(ctx, "mail"))
+	i := takeJob(t, q)
+	require.Equal(t, "blocked", i.ID())
+	_, err = i.Context()
+	require.NoError(t, err)
+	require.NoError(t, i.Ack())
+}
+
+func TestRedisJobsStopWithWorker(t *testing.T) {
+	cases := []struct {
+		name   string
+		expire bool
+	}{
+		{name: "worker acknowledges before stop deadline"},
+		{name: "unfinished job is recovered after deadline", expire: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := redisjobs.Config{Queue: rand.Text(), Prefetch: 1, VisibilityTimeout: 150 * time.Millisecond}
+			d, q := jobsDriver(t, cfg, nil)
+			ctx := t.Context()
+			require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "active", Job: "mail"}))
+			require.NoError(t, d.Resume(ctx, "mail"))
+			i := takeJob(t, q)
+			_, err := i.Context()
+			require.NoError(t, err)
+			grace, cancel := context.WithTimeout(ctx, 4*time.Second)
+			defer cancel()
+			done := make(chan error, 1)
+			go func() { done <- d.Stop(grace) }()
+			require.Eventually(t, func() bool {
+				s, err := d.State(ctx)
+				return err != nil || !s.Ready
+			}, time.Second, 5*time.Millisecond)
+			if tc.expire {
+				cancel()
+				require.ErrorIs(t, <-done, context.Canceled)
+			} else {
+				require.NoError(t, i.Ack())
+				require.NoError(t, <-done)
+			}
+			b, qb := jobsDriver(t, cfg, nil)
+			if tc.expire {
+				require.NoError(t, b.Resume(ctx, "mail"))
+				recovered := takeJob(t, qb)
+				require.Equal(t, "active", recovered.ID())
+				require.NoError(t, recovered.Ack())
+			}
+			s, err := b.State(ctx)
+			require.NoError(t, err)
+			require.Zero(t, s.Active)
+			require.Zero(t, s.Reserved)
+		})
+	}
 }
 
 func TestRedisJobsPauseFullHeap(t *testing.T) {
@@ -282,7 +367,9 @@ func TestRedisJobsInterruptedRequeue(t *testing.T) {
 			require.NoError(t, recovered.Ack())
 			state, err := b.State(ctx)
 			require.NoError(t, err)
-			require.Zero(t, state.Active+state.Reserved+state.Delayed)
+			require.Zero(t, state.Active)
+			require.Zero(t, state.Reserved)
+			require.Zero(t, state.Delayed)
 		})
 	}
 }

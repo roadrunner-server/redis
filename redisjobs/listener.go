@@ -24,9 +24,8 @@ func (d *Driver) listen(ctx context.Context, done chan struct{}) {
 		}
 		i, err := d.read(ctx, &cursor, &nextScan)
 		if err == nil && i != nil && ctx.Err() == nil {
-			var inserted bool
-			inserted, err = d.deliver(ctx, i)
-			if inserted {
+			err = d.queue.InsertContext(ctx, i)
+			if err == nil {
 				continue
 			}
 		}
@@ -40,17 +39,6 @@ func (d *Driver) listen(ctx context.Context, done chan struct{}) {
 			}
 		}
 	}
-}
-
-func (d *Driver) deliver(ctx context.Context, i *item) (bool, error) {
-	if i.record.AutoAck {
-		n, err := i.settle(ctx, nil, 0)
-		if err != nil || n == 0 {
-			return false, err
-		}
-	}
-	err := d.queue.InsertContext(ctx, i)
-	return err == nil, err
 }
 
 func (d *Driver) read(ctx context.Context, cursor *string, nextScan *time.Time) (*item, error) {

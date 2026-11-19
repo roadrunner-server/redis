@@ -24,18 +24,20 @@ func (r record) encode(delay int64) ([]byte, error) {
 		return nil, errors.New("redis jobs: delay must not be negative")
 	}
 	if delay > 0 {
-		// Each delayed push needs a distinct sorted set member, even for identical jobs.
+		// Redis stores each member once. https://redis.io/docs/latest/commands/zadd/
 		r.Nonce = rand.Text()
 	}
 	return json.Marshal(r)
 }
 
 type item struct {
-	record   record
-	driver   *Driver
-	entry    string
-	delivery int64
-	settled  sync.Once
+	record     record
+	driver     *Driver
+	entry      string
+	delivery   int64
+	mu         sync.Mutex
+	dispatched bool
+	finished   bool
 }
 
 func (i *item) ID() string                   { return i.record.ID }
@@ -45,7 +47,7 @@ func (i *item) Body() []byte                 { return i.record.Payload }
 func (i *item) Headers() map[string][]string { return i.record.Headers }
 
 func (i *item) Context() ([]byte, error) {
-	return json.Marshal(struct {
+	data, err := json.Marshal(struct {
 		ID       string              `json:"id"`
 		Job      string              `json:"job"`
 		Driver   string              `json:"driver"`
@@ -53,12 +55,49 @@ func (i *item) Context() ([]byte, error) {
 		Queue    string              `json:"queue"`
 		Headers  map[string][]string `json:"headers"`
 	}{i.ID(), i.record.Name, "redis", i.GroupID(), i.driver.cfg.Queue, i.Headers()})
+	if err != nil {
+		return nil, err
+	}
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if i.finished {
+		return nil, errors.New("redis jobs: delivery already finished")
+	}
+	if !i.dispatched {
+		if err := i.driver.startWorker(); err != nil {
+			return nil, err
+		}
+		if i.record.AutoAck {
+			n, err := i.settle(context.Background(), nil, 0)
+			if err != nil || n == 0 {
+				i.driver.finishWorker()
+				if err != nil {
+					return nil, err
+				}
+				return nil, errors.New("redis jobs: delivery has been reclaimed")
+			}
+		}
+		i.dispatched = true
+	}
+	return data, nil
 }
 
-// A worker transport error leaves the delivery pending until the visibility timeout.
+// A worker transport error leaves a manual delivery pending until the visibility timeout.
 func (i *item) Nack() error {
-	i.settled.Do(func() { <-i.driver.slots })
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if !i.finished {
+		i.release()
+	}
 	return nil
+}
+
+func (i *item) release() {
+	i.finished = true
+	<-i.driver.slots
+	if i.dispatched {
+		i.driver.finishWorker()
+	}
 }
 
 func (i *item) Ack() error { return i.finish(false, nil, 0) }
@@ -72,28 +111,33 @@ func (i *item) Requeue(headers map[string][]string, delay int) error {
 }
 
 func (i *item) finish(requeue bool, headers map[string][]string, delay int) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if !i.finished {
+		// Jobs can call Ack after a failed Requeue. https://github.com/roadrunner-server/jobs/blob/v6.0.1/listener.go#L205-L221
+		defer i.release()
+	}
+	if i.record.AutoAck && requeue {
+		return errors.New("redis jobs: cannot requeue an auto-acknowledged job")
+	}
+	if i.finished || (i.dispatched && i.record.AutoAck) {
+		return nil
+	}
+	var replacement []byte
 	var err error
-	// Jobs can call Ack after a failed Requeue. Redis must retain that delivery.
-	i.settled.Do(func() {
-		defer func() { <-i.driver.slots }()
-		if i.record.AutoAck {
-			return
+	if requeue {
+		r := i.record
+		if len(headers) != 0 {
+			r.Headers = make(map[string][]string, len(r.Headers)+len(headers))
+			maps.Copy(r.Headers, i.record.Headers)
+			maps.Copy(r.Headers, headers)
 		}
-		var replacement []byte
-		if requeue {
-			r := i.record
-			if len(headers) != 0 {
-				r.Headers = make(map[string][]string, len(r.Headers)+len(headers))
-				maps.Copy(r.Headers, i.record.Headers)
-				maps.Copy(r.Headers, headers)
-			}
-			replacement, err = r.encode(int64(delay))
-			if err != nil {
-				return
-			}
+		replacement, err = r.encode(int64(delay))
+		if err != nil {
+			return err
 		}
-		_, err = i.settle(context.Background(), replacement, delay)
-	})
+	}
+	_, err = i.settle(context.Background(), replacement, delay)
 	return err
 }
 

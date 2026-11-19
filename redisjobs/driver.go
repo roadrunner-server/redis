@@ -43,10 +43,12 @@ type Driver struct {
 	consumer string
 	slots    chan struct{}
 
-	mu     sync.Mutex
-	cancel context.CancelFunc
-	done   chan struct{}
-	closed bool
+	mu      sync.Mutex
+	cancel  context.CancelFunc
+	done    chan struct{}
+	stopped chan struct{}
+	workers int
+	drained chan struct{}
 }
 
 // New takes ownership of the client after it creates the pipeline.
@@ -129,7 +131,7 @@ func (d *Driver) Run(ctx context.Context, p jobs.Pipeline) error {
 func (d *Driver) Resume(ctx context.Context, _ string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if d.closed {
+	if d.stopped != nil {
 		return errors.New("redis jobs: pipeline stopped")
 	}
 	if err := ctx.Err(); err != nil || d.cancel != nil {
@@ -173,16 +175,55 @@ func (d *Driver) wait(ctx context.Context) error {
 
 func (d *Driver) Stop(ctx context.Context) error {
 	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.closed {
-		return nil
+	if d.stopped != nil {
+		done := d.stopped
+		d.mu.Unlock()
+		select {
+		case <-done:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
-	d.closed = true
+	d.stopped = make(chan struct{})
+	defer close(d.stopped)
 	err := d.pause(ctx)
+	if d.workers != 0 {
+		d.drained = make(chan struct{})
+	}
+	drained := d.drained
+	d.mu.Unlock()
 	for _, buffered := range d.queue.Remove(d.pipeline) {
 		_ = buffered.Nack()
 	}
+	if drained != nil {
+		select {
+		case <-drained:
+		case <-ctx.Done():
+			err = errors.Join(err, ctx.Err())
+		}
+	}
 	return errors.Join(err, d.client.Close())
+}
+
+func (d *Driver) startWorker() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.stopped != nil {
+		return errors.New("redis jobs: pipeline stopped")
+	}
+	d.workers++
+	return nil
+}
+
+func (d *Driver) finishWorker() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.workers--
+	if d.workers == 0 && d.drained != nil {
+		close(d.drained)
+		d.drained = nil
+	}
 }
 
 func (d *Driver) State(ctx context.Context) (*jobs.State, error) {
