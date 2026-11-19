@@ -92,6 +92,8 @@ github.com/roadrunner-server/priority_queue v1.2.0 h1:d886ba17GnE2WQ8NI+bwPNpyyq
 github.com/roadrunner-server/priority_queue v1.2.0/go.mod h1:sjFW0tQK3NSdiPFmuUty0fMydHGg50YoMjfN/EpZIdw=
 github.com/roadrunner-server/rpc/v6 v6.0.0 h1:B63RuOl3Md+X8qooXXICBTSnNQNOkOvyuPQ/CU8QpI0=
 github.com/roadrunner-server/rpc/v6 v6.0.0/go.mod h1:8yuu2n1+3yzhUHkdq/VVdbzQI6SYsEergrCrxGchc+Q=
+github.com/roadrunner-server/server/v6 v6.0.0 h1:x5Z8cpy/okUHgTrzNkfHUc5XrmcmTlYgDVYYTgZAmEo=
+github.com/roadrunner-server/server/v6 v6.0.0/go.mod h1:/ejmE3F65H7KepjcsiIGQct2drKboXAGJuIJndMxf0E=
 github.com/roadrunner-server/tcplisten v1.6.1 h1:P7EYsgwdMZO47huUgn1xAIFhYgEs9s72MoLZZWbxNiM=
 github.com/roadrunner-server/tcplisten v1.6.1/go.mod h1:M01BcmhsBiek8WfkiRQwVXwVamgZ5YV36Wa0hz937dA=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=

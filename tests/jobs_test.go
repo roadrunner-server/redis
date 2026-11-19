@@ -145,6 +145,38 @@ func TestRedisJobsNack(t *testing.T) {
 	require.Zero(t, s.Delayed)
 }
 
+func TestRedisJobsPrefetchAndDelayedNack(t *testing.T) {
+	d, q := jobsDriver(t, redisjobs.Config{Queue: rand.Text(), Prefetch: 1}, nil)
+	ctx := t.Context()
+	require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "first", Job: "mail"}))
+	require.NoError(t, d.Push(ctx, &jobs.Job{Ident: "second", Job: "mail"}))
+	require.NoError(t, d.Resume(ctx, "mail"))
+	first := takeJob(t, q)
+	require.Equal(t, "first", first.ID())
+	require.Never(t, func() bool { return q.Len() != 0 }, 250*time.Millisecond, 10*time.Millisecond)
+	s, err := d.State(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, s.Active)
+	require.EqualValues(t, 1, s.Reserved)
+	start := time.Now()
+	require.NoError(t, first.NackWithOptions(true, 1))
+	second := takeJob(t, q)
+	require.Equal(t, "second", second.ID())
+	require.NoError(t, second.Ack())
+	s, err = d.State(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, s.Delayed)
+	retry := takeJob(t, q)
+	require.GreaterOrEqual(t, time.Since(start), time.Second-time.Millisecond)
+	require.Equal(t, "first", retry.ID())
+	require.NoError(t, retry.Ack())
+	s, err = d.State(ctx)
+	require.NoError(t, err)
+	require.Zero(t, s.Delayed)
+	require.Zero(t, s.Active)
+	require.Zero(t, s.Reserved)
+}
+
 func takeJob(t *testing.T, q *priorityqueue.BinHeap[api.Job]) api.Job {
 	t.Helper()
 	require.Eventually(t, func() bool { return q.Len() > 0 }, 5*time.Second, 5*time.Millisecond)

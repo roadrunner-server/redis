@@ -109,6 +109,11 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: stable
+      - name: Install Redis 8.0 for private test servers
+        run: |
+          mkdir "$RUNNER_TEMP/redis-bin"
+          docker cp "${{ job.services.redis.id }}:/usr/local/bin/redis-server" "$RUNNER_TEMP/redis-bin/redis-server"
+          echo "$RUNNER_TEMP/redis-bin" >> "$GITHUB_PATH"
       - run: go test -race -timeout 5m -run '^TestRedisJobs' .
         working-directory: tests
 
