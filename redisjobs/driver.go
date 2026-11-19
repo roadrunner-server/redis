@@ -92,10 +92,18 @@ func New(ctx context.Context, client redis.UniversalClient, log *slog.Logger, q 
 		client: client, log: log, queue: heap, pipeline: pipeline, cfg: cfg,
 		stream: prefix + "ready", delayed: prefix + "delayed", consumer: rand.Text(), slots: make(chan struct{}, cfg.Prefetch),
 	}
-	if err := client.XGroupCreateMkStream(ctx, d.stream, group, "0").Err(); err != nil && !redis.HasErrorPrefix(err, "BUSYGROUP") {
+	if err := d.ensureGroup(ctx); err != nil {
 		return nil, err
 	}
 	return d, nil
+}
+
+func (d *Driver) ensureGroup(ctx context.Context) error {
+	err := d.client.XGroupCreateMkStream(ctx, d.stream, group, "0").Err()
+	if redis.HasErrorPrefix(err, "BUSYGROUP") {
+		return nil
+	}
+	return err
 }
 
 func (d *Driver) Push(ctx context.Context, m jobs.Message) error {
@@ -115,12 +123,16 @@ func (d *Driver) Push(ctx context.Context, m jobs.Message) error {
 
 func (d *Driver) keys() []string { return []string{d.stream, d.delayed} }
 
+const redisClock = `
+local t = redis.call('TIME')
+local now = t[1] * 1000 + math.floor(t[2] / 1000)
+`
+
 const enqueue = `
 local function enqueue(job, delay)
   if tonumber(delay) == 0 then return redis.call('XADD', KEYS[1], '*', 'job', job) end
-  local now = redis.call('TIME')
-  local due = (now[1] + delay) * 1000 + math.floor(now[2] / 1000)
-  return redis.call('ZADD', KEYS[2], due, job)
+  ` + redisClock + `
+  return redis.call('ZADD', KEYS[2], now + delay * 1000, job)
 end
 `
 
@@ -230,7 +242,14 @@ func (d *Driver) State(ctx context.Context) (*jobs.State, error) {
 	const state = `
 local pending = redis.call('XPENDING', KEYS[1], ARGV[1])[1]
 return {pending, redis.call('XLEN', KEYS[1]) - pending, redis.call('ZCARD', KEYS[2])}`
-	counts, err := d.client.Eval(ctx, state, d.keys(), group).Int64Slice()
+	count := func() ([]int64, error) { return d.client.Eval(ctx, state, d.keys(), group).Int64Slice() }
+	counts, err := count()
+	if redis.HasErrorPrefix(err, "NOGROUP") {
+		if err := d.ensureGroup(ctx); err != nil {
+			return nil, err
+		}
+		counts, err = count()
+	}
 	if err != nil {
 		return nil, err
 	}

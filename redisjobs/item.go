@@ -34,7 +34,7 @@ type item struct {
 	record     record
 	driver     *Driver
 	entry      string
-	delivery   int64
+	delivery   string
 	mu         sync.Mutex
 	dispatched bool
 	finished   bool

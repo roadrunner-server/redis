@@ -12,17 +12,26 @@ import (
 
 const readInterval = 200 * time.Millisecond
 
+type pendingScan struct {
+	after string
+	tail  string
+	next  time.Time
+}
+
 func (d *Driver) listen(ctx context.Context, done chan struct{}) {
 	defer close(done)
-	cursor := "0-0"
-	var nextScan time.Time
+	var scan pendingScan
 	for ctx.Err() == nil {
 		select {
 		case d.slots <- struct{}{}:
 		case <-ctx.Done():
 			return
 		}
-		i, err := d.read(ctx, &cursor, &nextScan)
+		i, err := d.read(ctx, &scan)
+		if redis.HasErrorPrefix(err, "NOGROUP") {
+			scan = pendingScan{}
+			err = d.ensureGroup(ctx)
+		}
 		if err == nil && i != nil && ctx.Err() == nil {
 			err = d.queue.InsertContext(ctx, i)
 			if err == nil {
@@ -41,34 +50,22 @@ func (d *Driver) listen(ctx context.Context, done chan struct{}) {
 	}
 }
 
-func (d *Driver) read(ctx context.Context, cursor *string, nextScan *time.Time) (*item, error) {
-	if *cursor != "0-0" || !time.Now().Before(*nextScan) {
-		const promote = `
-local now = redis.call('TIME')
-local due = redis.call('ZRANGEBYSCORE', KEYS[2], '-inf', now[1] * 1000 + math.floor(now[2] / 1000), 'LIMIT', 0, 100)
+func (d *Driver) read(ctx context.Context, scan *pendingScan) (*item, error) {
+	if scan.tail != "" || !time.Now().Before(scan.next) {
+		const promote = redisClock + `
+local due = redis.call('ZRANGE', KEYS[2], '-inf', now, 'BYSCORE', 'LIMIT', 0, 100)
 for _, job in ipairs(due) do
   redis.call('XADD', KEYS[1], '*', 'job', job)
   redis.call('ZREM', KEYS[2], job)
 end
 return #due`
-		if err := d.client.Eval(ctx, promote, d.keys()).Err(); err != nil {
+		// When promotion needs more memory, consuming ready jobs can free it.
+		if err := d.client.Eval(ctx, promote, d.keys()).Err(); err != nil && !redis.HasErrorPrefix(err, "OOM") {
 			return nil, err
 		}
-		messages, next, err := d.client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
-			Stream: d.stream, Group: group, Consumer: d.consumer, Start: *cursor, MinIdle: d.cfg.VisibilityTimeout, Count: 1,
-		}).Result()
-		if err != nil {
-			return nil, err
-		}
-		*cursor = next
-		*nextScan = time.Now().Add(readInterval)
-		if len(messages) > 0 {
-			m := messages[0]
-			p, err := d.client.XPendingExt(ctx, &redis.XPendingExtArgs{Stream: d.stream, Group: group, Start: m.ID, End: m.ID, Count: 1}).Result()
-			if err != nil || len(p) == 0 || p[0].Consumer != d.consumer {
-				return nil, err
-			}
-			return d.unpack(m, p[0].RetryCount)
+		i, err := d.claim(ctx, scan)
+		if err != nil || i != nil {
+			return i, err
 		}
 	}
 	streams, err := d.client.XReadGroup(ctx, &redis.XReadGroupArgs{
@@ -80,15 +77,53 @@ return #due`
 	if len(streams) == 0 || len(streams[0].Messages) == 0 {
 		return nil, nil
 	}
-	return d.unpack(streams[0].Messages[0], 1)
-}
-
-func (d *Driver) unpack(m redis.XMessage, delivery int64) (*item, error) {
-	i := &item{entry: m.ID, delivery: delivery, driver: d}
+	m := streams[0].Messages[0]
 	raw, ok := m.Values["job"].(string)
 	if !ok {
 		return nil, fmt.Errorf("redis stream entry %s has no job", m.ID)
 	}
+	return d.unpack(m.ID, "1", raw)
+}
+
+func (d *Driver) claim(ctx context.Context, scan *pendingScan) (*item, error) {
+	// Use the pending tail at the start of each scan. https://redis.io/docs/latest/commands/xpending/
+	// XCLAIM increments the delivery count on the primary. https://redis.io/docs/latest/commands/xclaim/
+	const claim = `
+local start, tail = '-', ARGV[5]
+if tail == '' then
+  tail = redis.call('XPENDING', KEYS[1], ARGV[1])[3]
+  if not tail then return {} end
+else
+  start = '(' .. ARGV[4]
+end
+local page = redis.call('XPENDING', KEYS[1], ARGV[1], start, tail, 10)
+for _, p in ipairs(page) do
+  if p[3] >= tonumber(ARGV[3]) then
+    local m = redis.call('XCLAIM', KEYS[1], ARGV[1], ARGV[2], ARGV[3], p[1])[1]
+    if m then return {p[1], tail, tostring(p[4] + 1), m[2][2]} end
+  end
+end
+if #page == 10 then return {page[10][1], tail} end
+return {}`
+	reply, err := d.client.Eval(ctx, claim, []string{d.stream}, group, d.consumer, d.cfg.VisibilityTimeout.Milliseconds(), scan.after, scan.tail).StringSlice()
+	if err != nil {
+		return nil, err
+	}
+	*scan = pendingScan{next: time.Now().Add(readInterval)}
+	if len(reply) == 0 {
+		return nil, nil
+	}
+	if reply[0] != reply[1] {
+		scan.after, scan.tail = reply[0], reply[1]
+	}
+	if len(reply) == 2 {
+		return nil, nil
+	}
+	return d.unpack(reply[0], reply[2], reply[3])
+}
+
+func (d *Driver) unpack(entry, delivery, raw string) (*item, error) {
+	i := &item{entry: entry, delivery: delivery, driver: d}
 	if err := json.Unmarshal([]byte(raw), &i.record); err != nil {
 		return nil, err
 	}
