@@ -173,6 +173,40 @@
       ]
     }
   },
+  "definitions": {
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["driver"],
+      "properties": {
+        "driver": { "const": "redis" },
+        "pool": { "type": "string", "minLength": 1 },
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "queue": {
+              "description": "Logical queue name. The default is the pipeline name.",
+              "type": "string",
+              "pattern": "^[^{}]+$"
+            },
+            "priority": {
+              "$ref": "https://raw.githubusercontent.com/roadrunner-server/jobs/refs/heads/master/schema.json#/definitions/PipelineProperties/priority"
+            },
+            "prefetch": {
+              "$ref": "https://raw.githubusercontent.com/roadrunner-server/jobs/refs/heads/master/schema.json#/definitions/PipelineProperties/prefetch",
+              "default": 10
+            },
+            "visibility_timeout": {
+              "description": "Time from delivery until a consumer can reclaim the job.",
+              "$ref": "#/$defs/duration",
+              "default": "5m"
+            }
+          }
+        }
+      }
+    }
+  },
   "$defs": {
     "duration": {
       "$ref": "https://raw.githubusercontent.com/roadrunner-server/roadrunner/refs/heads/master/schemas/config/3.0.schema.json#/definitions/Duration"
