@@ -1,0 +1,29 @@
+version: '3'
+
+rpc:
+  listen: tcp://127.0.0.1:16092
+server:
+  command: php
+
+redis:
+  addrs: ["${RR_TEST_PRIVATE_REDIS}"]
+  db: 2
+
+kv:
+  cache:
+    driver: redis
+    config:
+      addrs: ["${RR_TEST_PRIVATE_REDIS}"]
+      db: 0
+
+jobs:
+  pool:
+    debug: true
+    num_workers: 1
+  pipelines:
+    mail:
+      driver: redis
+      config:
+        queue: "${RR_TEST_QUEUE}"
+        priority: 5
+        visibility_timeout: 1s
